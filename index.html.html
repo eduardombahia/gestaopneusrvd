@@ -2288,5 +2288,23 @@ function renderTempoMedio(){
 
 showPage('dashboard');
 </script>
-</body>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBzRFHtyE8yzsav6AGI6cELVNMrNUN93pA",
+  authDomain: "gestaopneusrvd.firebaseapp.com",
+  projectId: "gestaopneusrvd",
+  storageBucket: "gestaopneusrvd.firebasestorage.app",
+  messagingSenderId: "40104636147",
+  appId: "1:40104636147:web:6dca3c87ac88a1e000d186"
+};
+
+const app = initializeApp(firebaseConfig);
+
+const db = getFirestore(app);
+
+console.log("Firebase conectado!", db);
+</script>
 </html>
