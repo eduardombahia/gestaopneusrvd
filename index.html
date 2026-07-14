@@ -314,7 +314,7 @@
       <div class="stats-row" id="dash-stats"></div>
       <div id="dash-alerta-banner" style="display:none;" class="alert-vencido" onclick="showPage('alertas')">
         <div class="alert-vencido-count" id="dash-alerta-count">0</div>
-        <div><div class="alert-vencido-text">pneu(s) com retorno atrasado (+7 dias)</div><div class="alert-vencido-sub">Clique para ver e registrar nova previsão de entrega</div></div>
+        <div><div class="alert-vencido-text">pneu(s) com retorno atrasado (+3 dias)</div><div class="alert-vencido-sub">Clique para ver e registrar nova previsão de entrega</div></div>
         <span style="margin-left:auto;font-size:18px">→</span>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
@@ -1880,7 +1880,7 @@ function renderFornecedores(){
 // ═══════════════════════════════════════════════════════════════
 // ─── ALERTAS DE RETORNO VENCIDO ────────────────────────────────
 // ═══════════════════════════════════════════════════════════════
-const DIAS_ALERTA = 7;
+const DIAS_ALERTA = 3;
 let previsaoPneuId=null, previsaoRefIdx=null;
 
 function diasEmReforma(r){
