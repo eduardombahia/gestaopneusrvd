@@ -1,0 +1,2456 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GestãoPneus · Rio Verde</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap');
+  :root {
+    --black:#111111;--charcoal:#1e1e1e;--dark:#252525;--mid:#3a3a3a;
+    --border:#333;--muted:#888;--light:#ccc;--white:#f5f5f5;
+    --accent:#e8a020;--accent-dim:#c48419;--accent-bg:rgba(232,160,32,0.08);
+    --red:#e05555;--green:#4caf7d;--blue:#5599ee;--purple:#bb77ee;
+    --radius:8px;--radius-lg:14px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Inter',sans-serif;background:var(--black);color:var(--white);min-height:100vh;font-size:14px;}
+  .app{display:flex;height:100vh;overflow:hidden;}
+  .sidebar{width:220px;min-width:220px;background:var(--charcoal);border-right:1px solid var(--border);display:flex;flex-direction:column;}
+  .logo{padding:20px 20px 16px;border-bottom:1px solid var(--border);}
+  .logo-mark{font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:700;color:var(--accent);letter-spacing:-.5px;}
+  .logo-sub{font-size:11px;color:var(--muted);margin-top:2px;letter-spacing:.5px;text-transform:uppercase;}
+  nav{padding:12px 10px;flex:1;}
+  .nav-label{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);padding:8px 10px 4px;}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:var(--radius);cursor:pointer;color:var(--light);transition:all .15s;margin-bottom:2px;font-size:13.5px;}
+  .nav-item:hover{background:var(--mid);color:var(--white);}
+  .nav-item.active{background:var(--accent-bg);color:var(--accent);border:1px solid rgba(232,160,32,.2);}
+  .sidebar-footer{padding:12px 14px;border-top:1px solid var(--border);font-size:11px;color:var(--muted);}
+  .main{flex:1;overflow-y:auto;display:flex;flex-direction:column;}
+  .topbar{display:flex;align-items:center;justify-content:space-between;padding:16px 28px;border-bottom:1px solid var(--border);background:var(--charcoal);position:sticky;top:0;z-index:10;}
+  .page-title{font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:700;letter-spacing:-.3px;}
+  .topbar-actions{display:flex;gap:10px;align-items:center;}
+  .btn{padding:8px 16px;border-radius:var(--radius);font-size:13px;font-weight:500;cursor:pointer;border:none;transition:all .15s;font-family:'Inter',sans-serif;}
+  .btn-primary{background:var(--accent);color:#111;}
+  .btn-primary:hover{background:var(--accent-dim);}
+  .btn-ghost{background:transparent;color:var(--light);border:1px solid var(--border);}
+  .btn-ghost:hover{background:var(--mid);color:var(--white);}
+  .btn-danger{background:transparent;color:var(--red);border:1px solid rgba(224,85,85,.3);}
+  .btn-danger:hover{background:rgba(224,85,85,.1);}
+  .btn-sucata{background:transparent;color:#ff8800;border:1px solid rgba(255,136,0,.3);}
+  .btn-sucata:hover{background:rgba(255,136,0,.1);}
+  .btn-retorno{background:transparent;color:var(--green);border:1px solid rgba(76,175,125,.3);}
+  .btn-retorno:hover{background:rgba(76,175,125,.1);}
+  .btn-sm{padding:5px 10px;font-size:12px;}
+  .content{padding:24px 28px;flex:1;}
+  .stats-row{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;margin-bottom:24px;}
+  @media (max-width:1200px){ .stats-row{grid-template-columns:repeat(3,1fr);} }
+  .stat-card{background:var(--charcoal);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px 20px;}
+  .stat-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;}
+  .stat-value{font-family:'Space Grotesk',sans-serif;font-size:28px;font-weight:700;}
+  .stat-sub{font-size:11px;color:var(--muted);margin-top:4px;}
+  .toolbar{display:flex;gap:10px;margin-bottom:16px;align-items:center;}
+  .search-wrap{position:relative;flex:1;}
+  .search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:15px;pointer-events:none;}
+  input[type="text"],input[type="date"],select,textarea{width:100%;background:var(--dark);border:1px solid var(--border);color:var(--white);border-radius:var(--radius);padding:9px 12px;font-family:'Inter',sans-serif;font-size:13px;outline:none;transition:border-color .15s;}
+  input[type="text"]:focus,input[type="date"]:focus,select:focus,textarea:focus{border-color:var(--accent);}
+  .search-input{padding-left:36px;}
+  select option{background:var(--dark);}
+  .table-wrap{background:var(--charcoal);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;}
+  table{width:100%;border-collapse:collapse;}
+  thead{background:var(--dark);}
+  th{padding:12px 16px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);font-weight:600;white-space:nowrap;}
+  td{padding:11px 16px;border-top:1px solid var(--border);font-size:13px;color:var(--light);vertical-align:middle;}
+  tr:hover td{background:rgba(255,255,255,.02);}
+  .badge{display:inline-block;padding:3px 8px;border-radius:20px;font-size:11px;font-weight:500;}
+  .badge-green{background:rgba(76,175,125,.15);color:var(--green);}
+  .badge-yellow{background:rgba(232,160,32,.15);color:var(--accent);}
+  .badge-red{background:rgba(224,85,85,.15);color:var(--red);}
+  .badge-blue{background:rgba(85,153,238,.15);color:var(--blue);}
+  .badge-gray{background:rgba(136,136,136,.15);color:var(--muted);}
+  .badge-purple{background:rgba(187,119,238,.15);color:var(--purple);}
+  .badge-orange{background:rgba(255,136,0,.15);color:#ff8800;}
+  .actions{display:flex;gap:4px;flex-wrap:wrap;}
+  .empty-state{text-align:center;padding:48px 24px;color:var(--muted);}
+  .empty-icon{font-size:40px;margin-bottom:12px;}
+  .empty-title{font-size:16px;font-weight:600;color:var(--light);margin-bottom:6px;}
+  /* MODAL */
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:100;align-items:center;justify-content:center;}
+  .modal-overlay.open{display:flex;}
+  .modal{background:var(--charcoal);border:1px solid var(--border);border-radius:var(--radius-lg);width:640px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.5);}
+  .modal-header{padding:20px 24px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:var(--charcoal);z-index:2;}
+  .modal-title{font-family:'Space Grotesk',sans-serif;font-size:17px;font-weight:700;}
+  .close-btn{background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;}
+  .close-btn:hover{color:var(--white);}
+  .modal-body{padding:20px 24px;}
+  .modal-footer{padding:16px 24px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px;position:sticky;bottom:0;background:var(--charcoal);}
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  .form-group{display:flex;flex-direction:column;gap:6px;}
+  .form-group.span-2{grid-column:span 2;}
+  label{font-size:12px;font-weight:500;color:var(--light);}
+  /* TABS MODAL */
+  .modal-tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:20px;}
+  .modal-tab{padding:9px 16px;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s;white-space:nowrap;}
+  .modal-tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+  .modal-tab:hover:not(.active){color:var(--light);}
+  .modal-tab-panel{display:none;}
+  .modal-tab-panel.active{display:block;}
+  /* REFORMA CARD */
+  .reforma-card{background:var(--dark);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:10px;}
+  .reforma-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+  .reforma-num{font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:700;color:var(--accent);}
+  .reforma-tipo-label{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-left:8px;}
+  .reforma-section{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:6px;padding:10px 12px;margin-top:8px;}
+  .reforma-section-title{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:8px;}
+  .add-reforma-btn{width:100%;background:var(--dark);border:1px dashed var(--border);border-radius:var(--radius);padding:10px;color:var(--muted);cursor:pointer;font-size:13px;transition:all .15s;text-align:center;font-family:'Inter',sans-serif;}
+  .add-reforma-btn:hover{border-color:var(--accent);color:var(--accent);}
+  /* retorno badge no card */
+  .retorno-ok{background:rgba(76,175,125,.1);border:1px solid rgba(76,175,125,.25);border-radius:6px;padding:6px 10px;margin-top:8px;font-size:12px;color:var(--green);}
+  .retorno-pendente{background:rgba(187,119,238,.08);border:1px solid rgba(187,119,238,.2);border-radius:6px;padding:6px 10px;margin-top:8px;font-size:12px;color:var(--purple);}
+  /* VEHICLE */
+  .vehicle-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;}
+  .vehicle-card{background:var(--charcoal);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px;cursor:pointer;transition:all .15s;}
+  .vehicle-card:hover{border-color:var(--accent);}
+  .vehicle-card-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;}
+  .vehicle-plate{font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:700;letter-spacing:1px;}
+  .vehicle-name{font-size:12px;color:var(--muted);margin-top:2px;}
+  .vehicle-tires{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
+  .tire-chip{background:var(--dark);border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:11px;color:var(--light);display:flex;align-items:center;gap:5px;}
+  .tire-chip-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);}
+  .tag-fogo{font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:700;color:var(--accent);}
+  .detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;}
+  .detail-key{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;}
+  .detail-val{font-size:14px;color:var(--white);font-weight:500;}
+  .link-row{display:flex;align-items:center;gap:8px;padding:10px;background:var(--dark);border-radius:var(--radius);border:1px solid var(--border);margin-bottom:6px;}
+  .link-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);flex-shrink:0;}
+  .confirm-msg{font-size:14px;color:var(--light);line-height:1.6;margin-bottom:4px;}
+  /* SUCATA BANNER */
+  .sucata-banner{background:rgba(255,136,0,.08);border:1px solid rgba(255,136,0,.25);border-radius:var(--radius);padding:14px 16px;margin-bottom:16px;}
+  .sucata-banner-title{font-weight:700;color:#ff8800;margin-bottom:4px;font-size:13px;}
+  .sucata-banner-info{font-size:12px;color:var(--light);}
+  ::-webkit-scrollbar{width:6px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+  ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+  /* HISTÓRICO / TIMELINE */
+  .timeline{position:relative;padding-left:24px;}
+  .timeline::before{content:'';position:absolute;left:8px;top:4px;bottom:4px;width:2px;background:var(--border);border-radius:2px;}
+  .tl-item{position:relative;margin-bottom:14px;}
+  .tl-item:last-child{margin-bottom:0;}
+  .tl-dot{position:absolute;left:-20px;top:3px;width:12px;height:12px;border-radius:50%;border:2px solid var(--charcoal);flex-shrink:0;}
+  .tl-dot-cadastro{background:#5599ee;}
+  .tl-dot-envio{background:#bb77ee;}
+  .tl-dot-retorno{background:#4caf7d;}
+  .tl-dot-sucata{background:#ff8800;}
+  .tl-dot-sucata-reforma{background:#e05555;}
+  .tl-card{background:var(--dark);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;}
+  .tl-date{font-size:10px;color:var(--muted);margin-bottom:3px;text-transform:uppercase;letter-spacing:.4px;}
+  .tl-title{font-size:13px;font-weight:600;color:var(--white);margin-bottom:2px;}
+  .tl-sub{font-size:11px;color:var(--muted);}
+  /* FILTRO POR DATA */
+  .date-filter-bar{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--dark);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:14px;flex-wrap:wrap;}
+  .date-filter-label{font-size:12px;color:var(--muted);white-space:nowrap;}
+  .date-filter-clear{background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;line-height:1;padding:0 2px;}
+  .date-filter-clear:hover{color:var(--white);}
+  .date-filter-result{font-size:12px;color:var(--accent);white-space:nowrap;}
+  /* ALERTA VENCIDO */
+  .alert-vencido{background:rgba(224,85,85,.1);border:1px solid rgba(224,85,85,.3);border-radius:var(--radius);padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;gap:12px;cursor:pointer;}
+  .alert-vencido:hover{background:rgba(224,85,85,.16);}
+  .alert-vencido-count{font-family:'Space Grotesk',sans-serif;font-size:22px;font-weight:700;color:var(--red);}
+  .alert-vencido-text{font-size:13px;color:var(--light);}
+  .alert-vencido-sub{font-size:11px;color:var(--muted);margin-top:2px;}
+  /* GLOBAL SEARCH DROPDOWN */
+  .global-search-wrap{position:relative;}
+  .global-search-input{width:280px;background:var(--dark);border:1px solid var(--border);color:var(--white);border-radius:var(--radius);padding:8px 12px 8px 34px;font-size:13px;font-family:'Inter',sans-serif;outline:none;transition:border-color .15s;}
+  .global-search-input:focus{border-color:var(--accent);width:340px;}
+  .global-search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none;}
+  .global-dropdown{display:none;position:absolute;top:calc(100% + 6px);right:0;width:400px;background:var(--charcoal);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:0 12px 40px rgba(0,0,0,.5);z-index:200;max-height:340px;overflow-y:auto;}
+  .global-dropdown.open{display:block;}
+  .global-result{display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .1s;}
+  .global-result:last-child{border-bottom:none;}
+  .global-result:hover{background:var(--mid);}
+  .global-result-icon{font-size:18px;flex-shrink:0;}
+  .global-result-main{font-size:13px;font-weight:600;color:var(--white);}
+  .global-result-sub{font-size:11px;color:var(--muted);}
+  .global-result-badge{margin-left:auto;flex-shrink:0;}
+  .global-no-result{padding:16px;text-align:center;font-size:13px;color:var(--muted);}
+  /* BATCH ENVIO */
+  .batch-bar{display:none;position:sticky;bottom:0;background:var(--charcoal);border-top:2px solid var(--accent);padding:12px 20px;display:flex;align-items:center;gap:12px;z-index:20;}
+  .batch-bar.visible{display:flex;}
+  .batch-count{font-size:13px;font-weight:600;color:var(--accent);}
+  .checkbox-col{width:32px;}
+  input[type="checkbox"]{width:15px;height:15px;accent-color:var(--accent);cursor:pointer;}
+  /* GRAFICO */
+  .chart-bar-wrap{display:flex;align-items:flex-end;gap:6px;height:120px;padding-top:8px;}
+  .chart-bar-col{display:flex;flex-direction:column;align-items:center;flex:1;gap:4px;}
+  .chart-bar{width:100%;border-radius:4px 4px 0 0;min-height:3px;transition:height .3s;}
+  .chart-bar-label{font-size:10px;color:var(--muted);text-align:center;white-space:nowrap;}
+  .chart-bar-val{font-size:10px;color:var(--light);font-weight:600;}
+  /* PREVISAO */
+  .previsao-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border-radius:20px;font-size:11px;font-weight:500;background:rgba(85,153,238,.15);color:var(--blue);}
+  .previsao-vencida{background:rgba(224,85,85,.15);color:var(--red);}
+  .pos-hist-item{display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--dark);border-radius:6px;border:1px solid var(--border);margin-bottom:5px;font-size:12px;}
+  /* COMPARAÇÃO DE FORNECEDORES */
+  .compare-table-wrap{overflow-x:auto;}
+  table.compare-table{width:100%;border-collapse:collapse;min-width:520px;}
+  table.compare-table th,table.compare-table td{padding:12px 16px;text-align:center;border:1px solid var(--border);font-size:13px;}
+  table.compare-table th{background:var(--dark);font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);}
+  table.compare-table td:first-child,table.compare-table th:first-child{text-align:left;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;}
+  table.compare-table td.compare-best{color:var(--green);font-weight:700;}
+  .compare-forn-name{font-family:'Space Grotesk',sans-serif;font-weight:700;color:var(--white);font-size:14px;}
+  /* MENU MOBILE */
+  .mobile-menu-btn{display:none;background:transparent;border:1px solid var(--border);color:var(--light);border-radius:var(--radius);width:36px;height:36px;font-size:16px;cursor:pointer;align-items:center;justify-content:center;flex-shrink:0;}
+  .sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:150;}
+  .sidebar-overlay.open{display:block;}
+  /* ═══ RESPONSIVIDADE MOBILE ═══ */
+  @media (max-width:900px){
+    .stats-row{grid-template-columns:repeat(3,1fr);}
+  }
+  @media (max-width:768px){
+    body{font-size:13.5px;}
+    .app{position:relative;}
+    .sidebar{position:fixed;left:0;top:0;bottom:0;z-index:200;transform:translateX(-100%);transition:transform .2s ease;box-shadow:0 0 40px rgba(0,0,0,.5);}
+    .sidebar.mobile-open{transform:translateX(0);}
+    .mobile-menu-btn{display:flex;}
+    .main{width:100%;}
+    .topbar{padding:12px 14px;flex-wrap:wrap;gap:10px;}
+    .topbar-actions{width:100%;flex-wrap:wrap;gap:8px;}
+    .topbar-actions .btn{flex:1;min-width:120px;}
+    .global-search-wrap{flex:1;min-width:0;}
+    .global-search-input{width:100%;}
+    .global-search-input:focus{width:100%;}
+    .global-dropdown{width:100%;left:0;right:0;}
+    .content{padding:14px 14px 24px;}
+    .stats-row{grid-template-columns:repeat(2,1fr);gap:10px;}
+    .stat-card{padding:12px 14px;}
+    .stat-value{font-size:21px;}
+    .stat-label{font-size:10px;}
+    div[style*="grid-template-columns:1fr 1fr"]{grid-template-columns:1fr !important;}
+    .toolbar{flex-wrap:wrap;}
+    .toolbar select,.toolbar .search-wrap{width:100%;flex:none;}
+    .date-filter-bar{flex-wrap:wrap;}
+    .date-filter-bar input,.date-filter-bar select{flex:1;min-width:130px;}
+    .table-wrap{overflow-x:auto;}
+    table{min-width:640px;}
+    .modal{width:95vw;max-height:92vh;}
+    .form-grid{grid-template-columns:1fr;}
+    .form-group.span-2{grid-column:span 1;}
+    .vehicle-grid{grid-template-columns:1fr;}
+    .modal-tabs{overflow-x:auto;flex-wrap:nowrap;}
+    .modal-tab{flex-shrink:0;}
+    .reforma-section .form-grid{grid-template-columns:1fr;}
+    table.compare-table{min-width:480px;}
+    .batch-bar{flex-wrap:wrap;padding:10px 14px;}
+  }
+  @media (max-width:480px){
+    .stats-row{grid-template-columns:1fr 1fr;}
+    .page-title{font-size:16px;}
+    .logo-mark{font-size:16px;}
+  }
+</style>
+</head>
+<body>
+
+<!-- TELA DE LOGIN -->
+<div id="login-overlay" style="position:fixed;inset:0;background:var(--black);z-index:999;display:flex;align-items:center;justify-content:center;">
+  <div style="width:340px;max-width:90vw;background:var(--charcoal);border:1px solid var(--border);border-radius:var(--radius-lg);padding:28px;">
+    <div class="logo-mark" style="margin-bottom:2px;">⬡ GestãoPneus</div>
+    <div class="logo-sub" style="margin-bottom:20px;">Rio Verde · GO</div>
+    <form id="login-form" onsubmit="return false;">
+      <div class="form-group" style="margin-bottom:12px;">
+        <label>E-mail</label>
+        <input type="text" id="login-email" autocomplete="username" placeholder="seuemail@exemplo.com">
+      </div>
+      <div class="form-group" style="margin-bottom:16px;">
+        <label>Senha</label>
+        <input type="text" id="login-password" autocomplete="current-password" placeholder="••••••••" style="-webkit-text-security:disc;text-security:disc;">
+      </div>
+      <div id="login-error" style="display:none;color:var(--red);font-size:12px;margin-bottom:12px;"></div>
+      <button type="submit" id="login-btn" class="btn btn-primary" style="width:100%;" onclick="window.doLogin()">Entrar</button>
+    </form>
+  </div>
+</div>
+
+<div class="app" id="app-root" style="display:none;">
+
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar(false)"></div>
+<aside class="sidebar" id="sidebar">
+  <div class="logo">
+    <div class="logo-mark">⬡ GestãoPneus</div>
+    <div class="logo-sub">Rio Verde · GO</div>
+  </div>
+  <nav>
+    <div class="nav-label">Menu</div>
+    <div class="nav-item active" onclick="showPage('dashboard')" id="nav-dashboard"><span>📊</span> Dashboard</div>
+    <div class="nav-item" onclick="showPage('pneus')" id="nav-pneus"><span>🛞</span> Pneus</div>
+    <div class="nav-item" onclick="showPage('veiculos')" id="nav-veiculos"><span>🚌</span> Ônibus</div>
+    <div class="nav-item" onclick="showPage('fornecedores')" id="nav-fornecedores"><span>🏭</span> Fornecedores</div>
+    <div class="nav-item" onclick="showPage('alertas')" id="nav-alertas"><span>🔴</span> Alertas <span id="nav-alerta-badge" style="margin-left:auto;background:var(--red);color:#fff;border-radius:10px;padding:1px 6px;font-size:10px;display:none;"></span></div>
+    <div class="nav-label" style="margin-top:8px;">Operações</div>
+    <div class="nav-item" onclick="openBatchModal('envio')"><span>📦</span> Envio em Lote</div>
+    <div class="nav-item" onclick="openBatchModal('retorno')"><span>📥</span> Retorno em Lote</div>
+    <div class="nav-item" onclick="openRelatorio()"><span>📄</span> Relatório</div>
+  </nav>
+  <div class="sidebar-footer">
+    <div id="sync-status" style="margin-bottom:6px;">v4.1 · Frota Rio Verde</div>
+    <div id="user-email" style="color:var(--light);margin-bottom:6px;word-break:break-all;"></div>
+    <div onclick="window.doLogout()" style="cursor:pointer;color:var(--red);">🚪 Sair</div>
+  </div>
+</aside>
+
+<main class="main">
+
+  <!-- DASHBOARD -->
+  <div id="page-dashboard">
+    <div class="topbar">
+      <button class="mobile-menu-btn" onclick="toggleSidebar()">☰</button>
+      <div class="page-title">Dashboard</div>
+      <div class="global-search-wrap">
+        <span class="global-search-icon">🔍</span>
+        <input class="global-search-input" type="text" placeholder="Busca global..." id="global-search" oninput="globalSearch(this.value)" onblur="setTimeout(()=>closeGlobalSearch(),200)" autocomplete="off">
+        <div class="global-dropdown" id="global-dropdown"></div>
+      </div>
+    </div>
+    <div class="content">
+      <div class="stats-row" id="dash-stats"></div>
+      <div id="dash-alerta-banner" style="display:none;" class="alert-vencido" onclick="showPage('alertas')">
+        <div class="alert-vencido-count" id="dash-alerta-count">0</div>
+        <div><div class="alert-vencido-text">pneu(s) com retorno atrasado (+7 dias)</div><div class="alert-vencido-sub">Clique para ver e registrar nova previsão de entrega</div></div>
+        <span style="margin-left:auto;font-size:18px">→</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+        <div class="table-wrap">
+          <div style="padding:14px 18px;border-bottom:1px solid var(--border);font-weight:600;font-size:13px;display:flex;justify-content:space-between;align-items:center;">
+            <span>📈 Envios por Mês</span>
+            <select id="dash-chart-year" onchange="renderDashboard()" style="width:90px;padding:4px 8px;font-size:12px;"></select>
+          </div>
+          <div id="dash-chart" style="padding:14px 18px;"></div>
+        </div>
+        <div class="table-wrap">
+          <div style="padding:14px 18px;border-bottom:1px solid var(--border);font-weight:600;font-size:13px;">🏭 Reformas por Fornecedor</div>
+          <div id="dash-fornecedores" style="padding:14px 18px;"></div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div class="table-wrap">
+          <div style="padding:14px 18px;border-bottom:1px solid var(--border);font-weight:600;font-size:13px;">🏷️ Pneus por Marca</div>
+          <div id="dash-marcas" style="padding:14px 18px;"></div>
+        </div>
+        <div class="table-wrap">
+          <div style="padding:14px 18px;border-bottom:1px solid var(--border);font-weight:600;font-size:13px;">⏱️ Tempo Médio de Retorno</div>
+          <div id="dash-tempo" style="padding:14px 18px;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PNEUS -->
+  <div id="page-pneus" style="display:none;">
+    <div class="topbar">
+      <button class="mobile-menu-btn" onclick="toggleSidebar()">☰</button>
+      <div class="page-title">Cadastro de Pneus</div>
+      <div class="topbar-actions">
+        <div class="global-search-wrap">
+          <span class="global-search-icon">🔍</span>
+          <input class="global-search-input" type="text" placeholder="Busca global..." id="global-search-2" oninput="globalSearch(this.value,'global-dropdown-2')" onblur="setTimeout(()=>closeGlobalSearch('global-dropdown-2'),200)" autocomplete="off">
+          <div class="global-dropdown" id="global-dropdown-2"></div>
+        </div>
+        <button class="btn btn-primary" onclick="openPneuModal()">＋ Novo Pneu</button>
+      </div>
+    </div>
+    <div class="content">
+      <div class="toolbar">
+        <div class="search-wrap">
+          <span class="search-icon">🔍</span>
+          <input type="text" class="search-input" placeholder="Buscar por fogo, DOT, marca..." id="search-pneus" oninput="renderPneus()">
+        </div>
+        <select style="width:150px;" id="filter-marca" onchange="renderPneus()"><option value="">Todas as marcas</option></select>
+        <select style="width:140px;" id="filter-medida" onchange="renderPneus()">
+          <option value="">Todas as medidas</option>
+          <option>215/75</option><option>275/80</option>
+        </select>
+        <select style="width:150px;" id="filter-status" onchange="renderPneus()">
+          <option value="">Todos</option>
+          <option value="Ativo">Ativo</option>
+          <option value="Em Reforma">Em Reforma</option>
+          <option value="Sucata">Sucata</option>
+        </select>
+      </div>
+      <!-- FILTRO POR DATA DE MOVIMENTAÇÃO -->
+      <div class="date-filter-bar">
+        <span class="date-filter-label">📅 Filtrar movimentações do dia:</span>
+        <input type="date" id="filter-data-mov" style="width:170px;flex-shrink:0;" onchange="renderPneus()">
+        <select id="filter-tipo-mov" style="width:160px;flex-shrink:0;" onchange="renderPneus()">
+          <option value="">Qualquer movimentação</option>
+          <option value="envio">Envio para Reforma</option>
+          <option value="retorno">Retorno de Reforma</option>
+          <option value="cadastro">Cadastro do Pneu</option>
+          <option value="sucata">Baixa (Sucata)</option>
+        </select>
+        <button class="date-filter-clear" onclick="clearDateFilter()" title="Limpar filtro de data">✕</button>
+        <span class="date-filter-result" id="date-filter-result" style="display:none;"></span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Fogo</th><th>DOT</th><th>Cadastro</th><th>Marca / Modelo</th><th>Medida</th>
+            <th>Recapagens</th><th>Ônibus</th><th>Status</th><th>Ações</th>
+          </tr></thead>
+          <tbody id="pneus-tbody"></tbody>
+        </table>
+        <div id="pneus-empty" class="empty-state" style="display:none;">
+          <div class="empty-icon">🛞</div>
+          <div class="empty-title">Nenhum pneu encontrado</div>
+          <div class="empty-sub">Adicione um novo pneu ou ajuste os filtros.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ALERTAS -->
+  <div id="page-alertas" style="display:none;">
+    <div class="topbar">
+      <button class="mobile-menu-btn" onclick="toggleSidebar()">☰</button>
+      <div class="page-title">🔴 Alertas de Retorno</div>
+    </div>
+    <div class="content" id="alertas-content"></div>
+  </div>
+
+  <!-- FORNECEDORES -->
+  <div id="page-fornecedores" style="display:none;">
+    <div class="topbar">
+      <button class="mobile-menu-btn" onclick="toggleSidebar()">☰</button>
+      <div class="page-title">🏭 Comparação de Fornecedores</div>
+    </div>
+    <div class="content" id="fornecedores-content"></div>
+  </div>
+
+  <!-- ÔNIBUS -->
+  <div id="page-veiculos" style="display:none;">
+    <div class="topbar">
+      <button class="mobile-menu-btn" onclick="toggleSidebar()">☰</button>
+      <div class="page-title">Ônibus</div>
+      <div class="topbar-actions">
+        <button class="btn btn-primary" onclick="openVeiculoModal()">＋ Novo Ônibus</button>
+      </div>
+    </div>
+    <div class="content">
+      <div class="toolbar">
+        <div class="search-wrap">
+          <span class="search-icon">🔍</span>
+          <input type="text" class="search-input" placeholder="Buscar por placa ou descrição..." id="search-veiculos" oninput="renderVeiculos()">
+        </div>
+      </div>
+      <div class="vehicle-grid" id="veiculos-grid"></div>
+      <div id="veiculos-empty" class="empty-state" style="display:none;">
+        <div class="empty-icon">🚌</div>
+        <div class="empty-title">Nenhum ônibus cadastrado</div>
+        <div class="empty-sub">Adicione um ônibus para associar pneus.</div>
+      </div>
+    </div>
+  </div>
+
+</main>
+</div>
+
+<!-- ═══ MODAL PNEU ═══ -->
+<div class="modal-overlay" id="modal-pneu">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-pneu-title">Novo Pneu</div>
+      <button class="close-btn" onclick="closeModal('modal-pneu')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-tabs">
+        <div class="modal-tab active" onclick="switchTab('tab-dados',this)">📋 Dados do Pneu</div>
+        <div class="modal-tab" onclick="switchTab('tab-sulco',this)" id="tab-sulco-btn">📏 Sulco / Km</div>
+        <div class="modal-tab" onclick="switchTab('tab-reforma',this)" id="tab-reforma-btn">🔧 Envio para Reforma</div>
+        <div class="modal-tab" onclick="switchTab('tab-historico',this)" id="tab-historico-btn">📜 Histórico</div>
+      </div>
+      <!-- TAB DADOS -->
+      <div class="modal-tab-panel active" id="tab-dados">
+        <div id="sucata-aviso" style="display:none;" class="sucata-banner">
+          <div class="sucata-banner-title">⚠️ Pneu em Sucata</div>
+          <div class="sucata-banner-info" id="sucata-aviso-info"></div>
+        </div>
+        <div class="form-grid">
+          <div class="form-group"><label>Fogo (Nº do Pneu) *</label><input type="text" id="pf-fogo" placeholder="Ex: 0001"></div>
+          <div class="form-group"><label>DOT</label><input type="text" id="pf-dot" placeholder="Ex: 3421"></div>
+          <div class="form-group"><label>📅 Data de Cadastro</label><input type="date" id="pf-data-cadastro"></div>
+          <div class="form-group">
+            <label>Marca *</label>
+            <select id="pf-marca" onchange="updateModelos()"><option value="">Selecione...</option></select>
+          </div>
+          <div class="form-group"><label>Modelo</label><select id="pf-modelo"><option value="">Selecione a marca</option></select></div>
+          <div class="form-group">
+            <label>Medida</label>
+            <select id="pf-medida"><option value="">Selecione...</option><option>215/75</option><option>275/80</option></select>
+          </div>
+          <div class="form-group">
+            <label>Status</label>
+            <select id="pf-status" onchange="onStatusChange()">
+              <option value="Ativo">Ativo</option>
+              <option value="Em Reforma">Em Reforma</option>
+              <option value="Sucata">Sucata</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Ônibus (opcional)</label>
+            <select id="pf-veiculo" onchange="togglePosicao()"><option value="">— Sem veículo —</option></select>
+          </div>
+          <div class="form-group" id="posicao-group" style="display:none;"><label>Posição no Ônibus</label>
+            <select id="pf-posicao">
+              <option value="">Selecione...</option>
+              <option>Dianteiro Esquerdo</option><option>Dianteiro Direito</option>
+              <option>Traseiro Esquerdo Interno</option><option>Traseiro Esquerdo Externo</option>
+              <option>Traseiro Direito Interno</option><option>Traseiro Direito Externo</option>
+              <option>Estepe</option>
+            </select>
+          </div>
+          <!-- CAMPOS SUCATA (ocultos por padrão) -->
+          <div class="form-group" id="sucata-fields" style="display:none;grid-column:span 2;">
+            <div class="form-grid" style="margin-top:4px;">
+              <div class="form-group">
+                <label>Motivo da Sucata</label>
+                <select id="pf-sucata-motivo">
+                  <option value="">Selecione...</option>
+                  <option>Desgaste</option><option>Dano / Corte</option>
+                  <option>Batida</option><option>Recapagem inviável</option><option>Outro</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Data da Baixa</label>
+                <input type="date" id="pf-sucata-data">
+              </div>
+              <div class="form-group span-2">
+                <label>Observação</label>
+                <input type="text" id="pf-sucata-obs" placeholder="Descrição adicional...">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- TAB SULCO / KM -->
+      <div class="modal-tab-panel" id="tab-sulco">
+        <p style="font-size:12px;color:var(--muted);margin-bottom:12px;">Registre o sulco (mm) e a quilometragem do veículo a cada medição. Com pelo menos 2 medições, o app calcula o desgaste por km rodado automaticamente.</p>
+        <div id="medicoes-lista"></div>
+        <button class="add-reforma-btn" onclick="addMedicao()">＋ Adicionar medição de sulco</button>
+        <div id="desgaste-analise" style="margin-top:14px;"></div>
+      </div>
+      <!-- TAB REFORMA -->
+      <div class="modal-tab-panel" id="tab-reforma">
+        <div id="reformas-lista"></div>
+        <button class="add-reforma-btn" onclick="addReforma()">＋ Registrar novo envio para reforma</button>
+      </div>
+      <!-- TAB HISTÓRICO -->
+      <div class="modal-tab-panel" id="tab-historico">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
+          <span style="font-size:12px;color:var(--muted);">Filtrar por data:</span>
+          <input type="date" id="hist-filter-date" style="width:160px;" oninput="renderHistorico()">
+          <select id="hist-filter-tipo" style="width:160px;" onchange="renderHistorico()">
+            <option value="">Todos os eventos</option>
+            <option value="cadastro">Cadastro</option>
+            <option value="envio">Envio para Reforma</option>
+            <option value="retorno">Retorno</option>
+            <option value="posicao">Mudança de Posição</option>
+            <option value="sucata">Sucata</option>
+          </select>
+          <button class="btn btn-ghost btn-sm" onclick="document.getElementById('hist-filter-date').value='';document.getElementById('hist-filter-tipo').value='';renderHistorico()">Limpar</button>
+          <span id="hist-filter-count" style="font-size:12px;color:var(--accent);margin-left:auto;"></span>
+        </div>
+        <div id="historico-timeline"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-sucata" id="pneu-modal-sucata-btn" style="display:none;margin-right:auto;" onclick="closeModal('modal-pneu');openSucataQuick(editingPneuId);">♻️ Dar Baixa (Sucata)</button>
+      <button class="btn btn-ghost" onclick="closeModal('modal-pneu')">Cancelar</button>
+      <button class="btn btn-primary" onclick="savePneu()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL RETORNO REFORMA ═══ -->
+<div class="modal-overlay" id="modal-retorno">
+  <div class="modal" style="width:480px;">
+    <div class="modal-header">
+      <div class="modal-title">🔄 Retorno da Reforma</div>
+      <button class="close-btn" onclick="closeModal('modal-retorno')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:var(--muted);margin-bottom:16px;" id="retorno-info"></p>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Data de Retorno</label>
+          <input type="date" id="ret-data">
+        </div>
+        <div class="form-group">
+          <label>Resultado Final</label>
+          <select id="ret-resultado" onchange="onRetResultadoChange()">
+            <option value="">Selecione...</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Responsável pelo recebimento</label>
+          <input type="text" id="ret-responsavel" placeholder="Nome de quem recebeu o pneu">
+        </div>
+        <div class="form-group" id="ret-custo-group">
+          <label>Custo da Reforma (R$)</label>
+          <input type="number" step="0.01" min="0" id="ret-custo" placeholder="0,00">
+        </div>
+        <div class="form-group span-2">
+          <label>Observação</label>
+          <input type="text" id="ret-obs" placeholder="Observações sobre o retorno...">
+        </div>
+        <div class="form-group span-2" id="ret-sulco-info" style="display:none;font-size:11px;color:var(--muted);"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-retorno')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveRetorno()">Confirmar Retorno</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL SUCATA RÁPIDO ═══ -->
+<div class="modal-overlay" id="modal-sucata">
+  <div class="modal" style="width:440px;">
+    <div class="modal-header">
+      <div class="modal-title">⚠️ Dar Baixa como Sucata</div>
+      <button class="close-btn" onclick="closeModal('modal-sucata')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:var(--muted);margin-bottom:16px;" id="sucata-info"></p>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Motivo</label>
+          <select id="sq-motivo">
+            <option value="">Selecione...</option>
+            <option>Desgaste</option><option>Dano / Corte</option>
+            <option>Batida</option><option>Recapagem inviável</option><option>Outro</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Data da Baixa</label>
+          <input type="date" id="sq-data">
+        </div>
+        <div class="form-group span-2">
+          <label>Observação</label>
+          <input type="text" id="sq-obs" placeholder="Descrição adicional...">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-sucata')">Cancelar</button>
+      <button class="btn btn-danger" onclick="saveSucata()">Confirmar Sucata</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL DETALHE PNEU ═══ -->
+<div class="modal-overlay" id="modal-detail">
+  <div class="modal" style="width:640px;">
+    <div class="modal-header">
+      <div class="modal-title">Detalhes do Pneu</div>
+      <button class="close-btn" onclick="closeModal('modal-detail')">✕</button>
+    </div>
+    <div class="modal-body" id="modal-detail-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-detail')">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL ÔNIBUS ═══ -->
+<div class="modal-overlay" id="modal-veiculo">
+  <div class="modal" style="width:500px;">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-veiculo-title">Novo Ônibus</div>
+      <button class="close-btn" onclick="closeModal('modal-veiculo')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group"><label>Placa *</label><input type="text" id="vf-placa" placeholder="Ex: ABC-1234" style="text-transform:uppercase;"></div>
+        <div class="form-group"><label>Nº Frota / Apelido</label><input type="text" id="vf-frota" placeholder="Ex: Frota 15"></div>
+        <div class="form-group span-2"><label>Descrição</label><input type="text" id="vf-desc" placeholder="Ex: Marcopolo Paradiso 2021"></div>
+        <div class="form-group"><label>Ano</label><input type="text" id="vf-ano" placeholder="Ex: 2021"></div>
+        <div class="form-group"><label>Chassi / Marca</label><input type="text" id="vf-chassi" placeholder="Ex: Volvo B420R"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-veiculo')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveVeiculo()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL DETALHE ÔNIBUS ═══ -->
+<div class="modal-overlay" id="modal-veiculo-detail">
+  <div class="modal" style="width:600px;">
+    <div class="modal-header">
+      <div class="modal-title" id="vd-title">Detalhes do Ônibus</div>
+      <button class="close-btn" onclick="closeModal('modal-veiculo-detail')">✕</button>
+    </div>
+    <div class="modal-body" id="modal-veiculo-detail-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-veiculo-detail')">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL CONFIRMAR ═══ -->
+<div class="modal-overlay" id="modal-confirm">
+  <div class="modal" style="width:400px;">
+    <div class="modal-header"><div class="modal-title">Confirmar Exclusão</div><button class="close-btn" onclick="closeModal('modal-confirm')">✕</button></div>
+    <div class="modal-body"><p class="confirm-msg" id="confirm-msg"></p></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-confirm')">Cancelar</button>
+      <button class="btn btn-danger" id="confirm-btn">Excluir</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL BATCH ENVIO/RETORNO ═══ -->
+<div class="modal-overlay" id="modal-batch">
+  <div class="modal" style="width:720px;">
+    <div class="modal-header">
+      <div class="modal-title" id="batch-title">📦 Envio em Lote</div>
+      <button class="close-btn" onclick="closeModal('modal-batch')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="batch-campos-comuns" style="margin-bottom:16px;"></div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px;">Selecionar Pneus</div>
+      <div style="display:flex;gap:8px;margin-bottom:10px;">
+        <input type="text" id="batch-search" placeholder="Filtrar por fogo, placa..." style="flex:1;" oninput="renderBatchList()">
+        <button class="btn btn-ghost btn-sm" onclick="batchSelectAll()">Selecionar tudo</button>
+        <button class="btn btn-ghost btn-sm" onclick="batchClearAll()">Limpar</button>
+      </div>
+      <div id="batch-list" style="max-height:320px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius);"></div>
+      <div style="margin-top:10px;font-size:12px;color:var(--accent);" id="batch-sel-count">0 pneus selecionados</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-batch')">Cancelar</button>
+      <button class="btn btn-primary" id="batch-confirm-btn" onclick="saveBatch()">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL PREVISÃO DE RETORNO ═══ -->
+<div class="modal-overlay" id="modal-previsao">
+  <div class="modal" style="width:460px;">
+    <div class="modal-header">
+      <div class="modal-title">📅 Nova Previsão de Retorno</div>
+      <button class="close-btn" onclick="closeModal('modal-previsao')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:var(--muted);margin-bottom:16px;" id="previsao-info"></p>
+      <div class="form-group">
+        <label>Data prevista de retorno</label>
+        <input type="date" id="prev-data">
+      </div>
+      <div class="form-group" style="margin-top:12px;">
+        <label>Observação (opcional)</label>
+        <input type="text" id="prev-obs" placeholder="Ex: Fornecedor confirmou por WhatsApp">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-previsao')">Cancelar</button>
+      <button class="btn btn-primary" onclick="savePrevisao()">Salvar Previsão</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL RELATÓRIO ═══ -->
+<div class="modal-overlay" id="modal-relatorio">
+  <div class="modal" style="width:580px;">
+    <div class="modal-header">
+      <div class="modal-title">📄 Exportar Relatório</div>
+      <button class="close-btn" onclick="closeModal('modal-relatorio')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Período — De</label>
+          <input type="date" id="rel-de">
+        </div>
+        <div class="form-group">
+          <label>Período — Até</label>
+          <input type="date" id="rel-ate">
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <select id="rel-status">
+            <option value="">Todos</option>
+            <option>Ativo</option><option>Em Reforma</option><option>Sucata</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Tipo de movimentação</label>
+          <select id="rel-tipo">
+            <option value="">Todas</option>
+            <option value="envio">Envios</option>
+            <option value="retorno">Retornos</option>
+            <option value="sucata">Sucatas</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Fornecedor</label>
+          <select id="rel-fornecedor"><option value="">Todos</option></select>
+        </div>
+        <div class="form-group">
+          <label>Formato</label>
+          <select id="rel-formato">
+            <option value="csv">CSV (Excel)</option>
+            <option value="print">Impressão / PDF</option>
+          </select>
+        </div>
+      </div>
+      <div id="rel-preview" style="margin-top:16px;font-size:12px;color:var(--muted);"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-relatorio')">Cancelar</button>
+      <button class="btn btn-primary" onclick="gerarRelatorio()">⬇ Exportar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── DADOS ────────────────────────────────────────────────────
+const MARCA_MODELO = {
+  'Good Year':['K Max','Regional RHS'],
+  'Michelin':['X Works','X Incity'],
+  'Wanli':['Sah01'],
+  'Pirelli':['Mc01'],
+};
+const FORNECEDORES = ['Pneus Central','A Definir'];
+
+// Veículos importados da planilha (Nr. Ordem usado como identificador, pois a
+// planilha não trazia placa). Frota = Empresa · Descrição = Tipo Chassi ·
+// Chassi/Marca = Fabricante.
+const VEICULOS_IMPORT_CSV = [
+  {placa:'142464',frota:'080 - EXPRESSO PLANALTO RIO VERDE',descricao:'VW 17230 - EUROVI',ano:'2024',chassi:'Volkswagen'},
+  {placa:'142465',frota:'080 - EXPRESSO PLANALTO RIO VERDE',descricao:'VW 17230 - EUROVI',ano:'2024',chassi:'Volkswagen'},
+  {placa:'142466',frota:'080 - EXPRESSO PLANALTO RIO VERDE',descricao:'VW 17230 - EUROVI',ano:'2024',chassi:'Volkswagen'},
+  {placa:'142467',frota:'080 - EXPRESSO PLANALTO RIO VERDE',descricao:'VW 17230 - EUROVI',ano:'2024',chassi:'Volkswagen'},
+  {placa:'142468',frota:'080 - EXPRESSO PLANALTO RIO VERDE',descricao:'VW 17230 - EUROVI',ano:'2024',chassi:'Volkswagen'},
+  {placa:'142469',frota:'080 - EXPRESSO PLANALTO RIO VERDE',descricao:'VW 17230 - EUROVI',ano:'2024',chassi:'Volkswagen'},
+  {placa:'142470',frota:'080 - EXPRESSO PLANALTO RIO VERDE',descricao:'VW 17230 - EUROVI',ano:'2024',chassi:'Volkswagen'},
+  {placa:'142471',frota:'080 - EXPRESSO PLANALTO RIO VERDE',descricao:'VW 17230 - EUROVI',ano:'2024',chassi:'Volkswagen'},
+  {placa:'142472',frota:'080 - EXPRESSO PLANALTO RIO VERDE',descricao:'VW 17230 - EUROVI',ano:'2024',chassi:'Volkswagen'},
+  {placa:'142473',frota:'080 - EXPRESSO PLANALTO RIO VERDE',descricao:'VW 17230 - EUROVI',ano:'2024',chassi:'Volkswagen'},
+  {placa:'142474',frota:'080 - EXPRESSO PLANALTO RIO VERDE',descricao:'VW 17230 - EUROVI',ano:'2024',chassi:'Volkswagen'},
+  {placa:'142475',frota:'080 - EXPRESSO PLANALTO RIO VERDE',descricao:'VW 17230 - EUROVI',ano:'2024',chassi:'Volkswagen'},
+  {placa:'142476',frota:'080 - EXPRESSO PLANALTO RIO VERDE',descricao:'VW 17230 - EUROVI',ano:'2024',chassi:'Volkswagen'},
+  {placa:'142477',frota:'080 - EXPRESSO PLANALTO RIO VERDE',descricao:'VW 17230 - EUROVI',ano:'2024',chassi:'Volkswagen'},
+  {placa:'142478',frota:'080 - EXPRESSO PLANALTO RIO VERDE',descricao:'VW 17230 - EUROVI',ano:'2024',chassi:'Volkswagen'},
+  {placa:'142479',frota:'080 - EXPRESSO PLANALTO RIO VERDE',descricao:'VW 17230 - EUROVI',ano:'2024',chassi:'Volkswagen'},
+  {placa:'142480',frota:'080 - EXPRESSO PLANALTO RIO VERDE',descricao:'VW 17230 - EUROVI',ano:'2024',chassi:'Volkswagen'},
+  {placa:'222439',frota:'080 - EXPRESSO PLANALTO RIO VERDE',descricao:'MB OF 1721-9BM384055 - EUROVI',ano:'2024',chassi:'Mercedes-Benz'},
+  {placa:'222440',frota:'080 - EXPRESSO PLANALTO RIO VERDE',descricao:'MB OF 1721-9BM384055 - EUROVI',ano:'2024',chassi:'Mercedes-Benz'},
+  {placa:'222441',frota:'080 - EXPRESSO PLANALTO RIO VERDE',descricao:'MB OF 1721-9BM384055 - EUROVI',ano:'2024',chassi:'Mercedes-Benz'},
+  {placa:'222442',frota:'080 - EXPRESSO PLANALTO RIO VERDE',descricao:'MB OF 1721-9BM384055 - EUROVI',ano:'2024',chassi:'Mercedes-Benz'},
+  {placa:'222443',frota:'080 - EXPRESSO PLANALTO RIO VERDE',descricao:'MB OF 1721-9BM384055 - EUROVI',ano:'2024',chassi:'Mercedes-Benz'},
+  {placa:'222444',frota:'080 - EXPRESSO PLANALTO RIO VERDE',descricao:'MB OF 1721-9BM384055 - EUROVI',ano:'2024',chassi:'Mercedes-Benz'},
+  {placa:'222445',frota:'080 - EXPRESSO PLANALTO RIO VERDE',descricao:'MB OF 1721-9BM384055 - EUROVI',ano:'2024',chassi:'Mercedes-Benz'},
+  {placa:'221945',frota:'087 - VIACAO ITAPETINGA RIO VERDE',descricao:'MB LO 916-9BM979277 - EUROV',ano:'2019',chassi:'Mercedes-Benz'},
+  {placa:'221946',frota:'087 - VIACAO ITAPETINGA RIO VERDE',descricao:'MB LO 916-9BM979277 - EUROV',ano:'2019',chassi:'Mercedes-Benz'},
+  {placa:'221949',frota:'087 - VIACAO ITAPETINGA RIO VERDE',descricao:'MB LO 916-9BM979277 - EUROV',ano:'2019',chassi:'Mercedes-Benz'},
+  {placa:'221950',frota:'087 - VIACAO ITAPETINGA RIO VERDE',descricao:'MB LO 916-9BM979277 - EUROV',ano:'2019',chassi:'Mercedes-Benz'},
+  {placa:'222401',frota:'087 - VIACAO ITAPETINGA RIO VERDE',descricao:'MB LO 916-9BM979274 - EUROVI',ano:'2024',chassi:'Mercedes-Benz'},
+  {placa:'222402',frota:'087 - VIACAO ITAPETINGA RIO VERDE',descricao:'MB LO 916-9BM979274 - EUROVI',ano:'2024',chassi:'Mercedes-Benz'},
+  {placa:'222403',frota:'087 - VIACAO ITAPETINGA RIO VERDE',descricao:'MB LO 916-9BM979274 - EUROVI',ano:'2024',chassi:'Mercedes-Benz'},
+  {placa:'222404',frota:'087 - VIACAO ITAPETINGA RIO VERDE',descricao:'MB LO 916-9BM979274 - EUROVI',ano:'2024',chassi:'Mercedes-Benz'},
+  {placa:'222405',frota:'087 - VIACAO ITAPETINGA RIO VERDE',descricao:'MB LO 916-9BM979274 - EUROVI',ano:'2024',chassi:'Mercedes-Benz'},
+  {placa:'222406',frota:'087 - VIACAO ITAPETINGA RIO VERDE',descricao:'MB LO 916-9BM979274 - EUROVI',ano:'2024',chassi:'Mercedes-Benz'},
+  {placa:'222407',frota:'087 - VIACAO ITAPETINGA RIO VERDE',descricao:'MB LO 916-9BM979274 - EUROVI',ano:'2024',chassi:'Mercedes-Benz'},
+  {placa:'222408',frota:'087 - VIACAO ITAPETINGA RIO VERDE',descricao:'MB LO 916-9BM979274 - EUROVI',ano:'2024',chassi:'Mercedes-Benz'},
+  {placa:'222409',frota:'087 - VIACAO ITAPETINGA RIO VERDE',descricao:'MB LO 916-9BM979274 - EUROVI',ano:'2024',chassi:'Mercedes-Benz'},
+  {placa:'222410',frota:'087 - VIACAO ITAPETINGA RIO VERDE',descricao:'MB LO 916-9BM979274 - EUROVI',ano:'2024',chassi:'Mercedes-Benz'},
+  {placa:'222411',frota:'087 - VIACAO ITAPETINGA RIO VERDE',descricao:'MB LO 916-9BM979274 - EUROVI',ano:'2024',chassi:'Mercedes-Benz'},
+  {placa:'222412',frota:'087 - VIACAO ITAPETINGA RIO VERDE',descricao:'MB LO 916-9BM979274 - EUROVI',ano:'2024',chassi:'Mercedes-Benz'},
+  {placa:'222413',frota:'087 - VIACAO ITAPETINGA RIO VERDE',descricao:'MB LO 916-9BM979274 - EUROVI',ano:'2024',chassi:'Mercedes-Benz'},
+  {placa:'222414',frota:'087 - VIACAO ITAPETINGA RIO VERDE',descricao:'MB LO 916-9BM979274 - EUROVI',ano:'2024',chassi:'Mercedes-Benz'},
+  {placa:'222415',frota:'087 - VIACAO ITAPETINGA RIO VERDE',descricao:'MB LO 916-9BM979274 - EUROVI',ano:'2024',chassi:'Mercedes-Benz'},
+  {placa:'222416',frota:'087 - VIACAO ITAPETINGA RIO VERDE',descricao:'MB LO 916-9BM979274 - EUROVI',ano:'2024',chassi:'Mercedes-Benz'},
+  {placa:'222417',frota:'087 - VIACAO ITAPETINGA RIO VERDE',descricao:'MB LO 916-9BM979274 - EUROVI',ano:'2024',chassi:'Mercedes-Benz'},
+  {placa:'222418',frota:'087 - VIACAO ITAPETINGA RIO VERDE',descricao:'MB LO 916-9BM979274 - EUROVI',ano:'2024',chassi:'Mercedes-Benz'},
+  {placa:'222419',frota:'087 - VIACAO ITAPETINGA RIO VERDE',descricao:'MB LO 916-9BM979274 - EUROVI',ano:'2024',chassi:'Mercedes-Benz'},
+  {placa:'222420',frota:'087 - VIACAO ITAPETINGA RIO VERDE',descricao:'MB LO 916-9BM979274 - EUROVI',ano:'2024',chassi:'Mercedes-Benz'},
+  {placa:'222421',frota:'087 - VIACAO ITAPETINGA RIO VERDE',descricao:'MB LO 916-9BM979274 - EUROVI',ano:'2024',chassi:'Mercedes-Benz'},
+  {placa:'222422',frota:'087 - VIACAO ITAPETINGA RIO VERDE',descricao:'MB LO 916-9BM979274 - EUROVI',ano:'2024',chassi:'Mercedes-Benz'},
+  {placa:'222423',frota:'087 - VIACAO ITAPETINGA RIO VERDE',descricao:'MB LO 916-9BM979274 - EUROVI',ano:'2024',chassi:'Mercedes-Benz'},
+  {placa:'222424',frota:'087 - VIACAO ITAPETINGA RIO VERDE',descricao:'MB LO 916-9BM979274 - EUROVI',ano:'2024',chassi:'Mercedes-Benz'},
+  {placa:'222425',frota:'087 - VIACAO ITAPETINGA RIO VERDE',descricao:'MB LO 916-9BM979274 - EUROVI',ano:'2024',chassi:'Mercedes-Benz'},
+  {placa:'242454',frota:'087 - VIACAO ITAPETINGA RIO VERDE',descricao:'VW 9180 - EUROVI',ano:'2024',chassi:'Volkswagen'},
+  {placa:'242455',frota:'087 - VIACAO ITAPETINGA RIO VERDE',descricao:'VW 9180 - EUROVI',ano:'2024',chassi:'Volkswagen'},
+  {placa:'242456',frota:'087 - VIACAO ITAPETINGA RIO VERDE',descricao:'VW 9180 - EUROVI',ano:'2024',chassi:'Volkswagen'},
+  {placa:'242457',frota:'087 - VIACAO ITAPETINGA RIO VERDE',descricao:'223 - VW 9180 - EUROVI',ano:'2024',chassi:'Volkswagen'},
+  {placa:'242458',frota:'087 - VIACAO ITAPETINGA RIO VERDE',descricao:'223 - VW 9180 - EUROVI',ano:'2024',chassi:'Volkswagen'},
+  {placa:'242459',frota:'087 - VIACAO ITAPETINGA RIO VERDE',descricao:'223 - VW 9180 - EUROVI',ano:'2024',chassi:'Volkswagen'},
+  {placa:'242460',frota:'087 - VIACAO ITAPETINGA RIO VERDE',descricao:'223 - VW 9180 - EUROVI',ano:'2024',chassi:'Volkswagen'},
+  {placa:'242461',frota:'087 - VIACAO ITAPETINGA RIO VERDE',descricao:'223 - VW 9180 - EUROVI',ano:'2024',chassi:'Volkswagen'},
+  {placa:'242462',frota:'087 - VIACAO ITAPETINGA RIO VERDE',descricao:'223 - VW 9180 - EUROVI',ano:'2024',chassi:'Volkswagen'},
+  {placa:'242463',frota:'087 - VIACAO ITAPETINGA RIO VERDE',descricao:'223 - VW 9180 - EUROVI',ano:'2024',chassi:'Volkswagen'},
+  {placa:'410',frota:'087 - VIACAO ITAPETINGA RIO VERDE',descricao:'103 - MB OF 1721-9BM384065 - EUROV',ano:'2016',chassi:'Mercedes-Benz'},
+  {placa:'411',frota:'087 - VIACAO ITAPETINGA RIO VERDE',descricao:'103 - MB OF 1721-9BM384065 - EUROV',ano:'2016',chassi:'Mercedes-Benz'}
+];
+
+// Os dados de pneus e veículos agora vivem no Firestore (nuvem), não mais no localStorage.
+// Eles chegam através de window.startApp() / window.onRemoteUpdate() (ver o script Firebase no final do arquivo).
+let pneus    = [];
+let veiculos = [];
+window.VEICULOS_IMPORT_CSV = VEICULOS_IMPORT_CSV; // exposto para o script de sincronização usar na 1ª carga
+
+let editingPneuId     = null;
+let editingVeiculoId  = null;
+let tempReformas      = [];
+let tempMedicoes      = [];
+let retornoPneuId     = null;
+let retormaIdx        = null;
+let sucataQuickId     = null;
+
+function save(){
+  if(window.syncToFirestore) window.syncToFirestore(pneus, veiculos);
+}
+function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2); }
+function fmtDate(s){ if(!s)return'—'; const[y,m,d]=s.split('-'); return`${d}/${m}/${y}`; }
+function today(){ return new Date().toISOString().slice(0,10); }
+
+// ─── STATUS ───────────────────────────────────────────────────
+// Conta apenas recapagens (não consertos)
+function contarRecapagens(p){
+  return (p.reformas||[]).filter(r=> r.retorno && r.retorno.resultado === 'Recapagem').length;
+}
+
+// ─── REGRAS DE NEGÓCIO: TIPO DE ENVIO × RESULTADO / SULCO ──────
+// Recapagem só pode voltar como Recapagem ou Sucata.
+// Conserto só pode voltar como Conserto ou Sucata.
+function resultadoOptionsFor(tipoEnvio){
+  if(tipoEnvio==='Recapar')            return ['Recapagem','Irreparável (virou sucata)'];
+  if(tipoEnvio==='Consertar Externo')  return ['Conserto','Irreparável (virou sucata)'];
+  return ['Recapagem','Conserto','Irreparável (virou sucata)']; // fallback (tipo não definido)
+}
+// Sulco no retorno é sempre determinado pela regra, nunca digitado livremente:
+// Recapagem => sempre 14mm · Conserto => o mesmo mm com que foi enviado · Sucata => não se aplica
+function sulcoRetornoAuto(r,resultado){
+  if(resultado==='Recapagem') return 14;
+  if(resultado==='Conserto')  return (r.sulcoEnvio!==undefined && r.sulcoEnvio!=='') ? parseFloat(r.sulcoEnvio) : null;
+  return null;
+}
+// Retorno de recapagem não tem custo (o serviço de recapagem não é cobrado no retorno)
+function custoRetornoAplicavel(resultado){
+  return resultado==='Conserto';
+}
+
+// ─── CUSTO POR REFORMA ──────────────────────────────────────────
+function fmtMoeda(v){
+  return (parseFloat(v)||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+// custo de uma única reforma (envio + retorno)
+function custoReforma(r){
+  return (parseFloat(r.custoEnvio)||0) + (parseFloat(r?.retorno?.custoRetorno)||0);
+}
+// custo total acumulado na vida útil de um pneu
+function custoPorPneu(p){
+  return (p.reformas||[]).reduce((a,r)=>a+custoReforma(r),0);
+}
+// estatísticas agregadas por fornecedor: atendimentos, tempo médio, taxa de sucata, custo médio
+function estatisticasFornecedores(){
+  const stats={};
+  const get=f=>{ if(!stats[f]) stats[f]={atendimentos:0,tempoTotal:0,tempoN:0,comRetorno:0,sucatas:0,custoTotal:0,custoN:0}; return stats[f]; };
+  FORNECEDORES.forEach(f=>get(f));
+  pneus.forEach(p=>(p.reformas||[]).forEach(r=>{
+    if(!r.fornecedor) return;
+    const s=get(r.fornecedor);
+    s.atendimentos++;
+    const custo=custoReforma(r);
+    if(r.custoEnvio || r.retorno?.custoRetorno){ s.custoTotal+=custo; s.custoN++; }
+    if(r.retorno?.data){
+      s.comRetorno++;
+      const dias=Math.round((new Date(r.retorno.data)-new Date(r.dataEnvio))/86400000);
+      if(dias>=0){ s.tempoTotal+=dias; s.tempoN++; }
+      if(r.retorno.resultado && r.retorno.resultado.includes('Irreparável')) s.sucatas++;
+    }
+  }));
+  return stats;
+}
+
+function statusBadge(p){
+  if(p.status==='Sucata')    return '<span class="badge badge-orange">♻️ Sucata</span>';
+  if(p.status==='Em Reforma') return '<span class="badge badge-purple">🔧 Em Reforma</span>';
+  const n = contarRecapagens(p);
+  if(n===0) return '<span class="badge badge-green">Novo</span>';
+  if(n===1) return '<span class="badge badge-yellow">1ª Recapagem</span>';
+  if(n===2) return '<span class="badge badge-yellow">2ª Recapagem</span>';
+  return `<span class="badge badge-red">${n}ª Recapagem</span>`;
+}
+
+// ─── NAVEGAÇÃO ────────────────────────────────────────────────
+function showPage(p){
+  ['dashboard','pneus','veiculos','alertas','fornecedores'].forEach(id=>{
+    document.getElementById('page-'+id).style.display = id===p?'':'none';
+    const nav=document.getElementById('nav-'+id);
+    if(nav) nav.classList.toggle('active',id===p);
+  });
+  if(p==='dashboard')    renderDashboard();
+  if(p==='pneus')        renderPneus();
+  if(p==='veiculos')     renderVeiculos();
+  if(p==='alertas')      renderAlertas();
+  if(p==='fornecedores') renderFornecedores();
+  toggleSidebar(false);
+}
+function openModal(id){ document.getElementById(id).classList.add('open'); }
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+
+// ─── MENU MOBILE ──────────────────────────────────────────────
+function toggleSidebar(force){
+  const sb=document.getElementById('sidebar');
+  const ov=document.getElementById('sidebar-overlay');
+  const open = force!==undefined ? force : !sb.classList.contains('mobile-open');
+  sb.classList.toggle('mobile-open',open);
+  ov.classList.toggle('open',open);
+}
+
+// ─── TABS MODAL ───────────────────────────────────────────────
+function switchTab(panelId,el){
+  document.querySelectorAll('#modal-pneu .modal-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('#modal-pneu .modal-tab-panel').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById(panelId).classList.add('active');
+  if(panelId==='tab-reforma') renderReformasForm();
+  if(panelId==='tab-sulco') renderMedicoesForm();
+  if(panelId==='tab-historico') renderHistorico();
+}
+
+// ─── STATUS CHANGE ────────────────────────────────────────────
+function onStatusChange(){
+  const v = document.getElementById('pf-status').value;
+  document.getElementById('sucata-fields').style.display = v==='Sucata'?'block':'none';
+}
+
+// ─── MODAL PNEU ───────────────────────────────────────────────
+function openPneuModal(id){
+  editingPneuId = id||null;
+  const p = id ? pneus.find(x=>x.id===id) : null;
+  document.getElementById('modal-pneu-title').textContent = p?'Editar Pneu':'Novo Pneu';
+
+  // reset tab para dados
+  document.querySelectorAll('#modal-pneu .modal-tab')[0].click();
+
+  // sucata aviso
+  const aviso = document.getElementById('sucata-aviso');
+  if(p?.status==='Sucata'){
+    aviso.style.display='block';
+    document.getElementById('sucata-aviso-info').textContent =
+      `Baixado em ${fmtDate(p.sucata?.data||'')} · Motivo: ${p.sucata?.motivo||'—'} · ${p.sucata?.obs||''}`;
+  } else { aviso.style.display='none'; }
+
+  document.getElementById('pf-fogo').value   = p?.fogo||'';
+  document.getElementById('pf-dot').value    = p?.dot||'';
+  document.getElementById('pf-data-cadastro').value = p?.dataCadastro || today();
+  document.getElementById('pf-medida').value = p?.medida||'';
+  document.getElementById('pf-status').value = p?.status||'Ativo';
+
+  // sucata campos
+  document.getElementById('sucata-fields').style.display = p?.status==='Sucata'?'block':'none';
+  document.getElementById('pf-sucata-motivo').value = p?.sucata?.motivo||'';
+  document.getElementById('pf-sucata-data').value   = p?.sucata?.data||'';
+  document.getElementById('pf-sucata-obs').value    = p?.sucata?.obs||'';
+
+  // marca/modelo
+  const mSel = document.getElementById('pf-marca');
+  mSel.innerHTML='<option value="">Selecione...</option>';
+  Object.keys(MARCA_MODELO).forEach(m=>{
+    mSel.innerHTML+=`<option${p?.marca===m?' selected':''}>${m}</option>`;
+  });
+  updateModelos(p?.modelo);
+
+  // veículos
+  const vSel = document.getElementById('pf-veiculo');
+  vSel.innerHTML='<option value="">— Sem veículo —</option>';
+  veiculos.forEach(v=>{
+    vSel.innerHTML+=`<option value="${v.id}"${p?.veiculoId===v.id?' selected':''}>${v.placa}${v.descricao?' – '+v.descricao:''}</option>`;
+  });
+  document.getElementById('pf-posicao').value = p?.posicao||'';
+  document.getElementById('posicao-group').style.display = p?.veiculoId?'flex':'none';
+
+  tempReformas = JSON.parse(JSON.stringify(p?.reformas||[]));
+  tempMedicoes = JSON.parse(JSON.stringify(p?.medicoes||[]));
+  syncStatusAuto();
+  document.getElementById('pneu-modal-sucata-btn').style.display = (p && p.status!=='Sucata') ? '' : 'none';
+  openModal('modal-pneu');
+}
+
+function togglePosicao(){
+  document.getElementById('posicao-group').style.display =
+    document.getElementById('pf-veiculo').value?'flex':'none';
+}
+function updateModelos(sel){
+  const m=document.getElementById('pf-marca').value;
+  const s=document.getElementById('pf-modelo');
+  if(!m){s.innerHTML='<option value="">Selecione a marca</option>';return;}
+  s.innerHTML=(MARCA_MODELO[m]||[]).map(mo=>`<option${sel===mo?' selected':''}>${mo}</option>`).join('');
+}
+
+// ─── FORMULÁRIO REFORMAS ──────────────────────────────────────
+function renderReformasForm(){
+  const lista = document.getElementById('reformas-lista');
+  lista.innerHTML = tempReformas.map((r,i)=>{
+    const temRetorno = r.retorno && r.retorno.data;
+    return `
+    <div class="reforma-card">
+      <div class="reforma-header">
+        <div style="display:flex;align-items:center;">
+          <span class="reforma-num">${i+1}º</span>
+          <span class="reforma-tipo-label">Envio</span>
+        </div>
+        <button class="btn btn-danger btn-sm" onclick="removeReforma(${i})" ${temRetorno?'disabled title="Já tem retorno registrado"':''}>🗑 Remover</button>
+      </div>
+
+      <!-- ENVIO -->
+      <div class="reforma-section">
+        <div class="reforma-section-title">📤 Envio</div>
+        <div class="form-grid" style="gap:10px;">
+          <div class="form-group">
+            <label>Tipo de Envio</label>
+            <select onchange="updR(${i},'tipoEnvio',this.value)">
+              <option value="">Selecione...</option>
+              <option${r.tipoEnvio==='Recapar'?' selected':''}>Recapar</option>
+              <option${r.tipoEnvio==='Consertar Externo'?' selected':''}>Consertar Externo</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Fornecedor</label>
+            <select onchange="updR(${i},'fornecedor',this.value)">
+              <option value="">Selecione...</option>
+              ${FORNECEDORES.map(f=>`<option${r.fornecedor===f?' selected':''}>${f}</option>`).join('')}
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Data do Envio</label>
+            <input type="date" value="${r.dataEnvio||''}" onchange="updR(${i},'dataEnvio',this.value)">
+          </div>
+          <div class="form-group">
+            <label>Responsável pelo Envio</label>
+            <input type="text" value="${r.responsavelEnvio||''}" placeholder="Nome..." oninput="updR(${i},'responsavelEnvio',this.value)">
+          </div>
+          <div class="form-group">
+            <label>Custo do Envio (R$)</label>
+            <input type="number" step="0.01" min="0" value="${r.custoEnvio||''}" placeholder="0,00" oninput="updR(${i},'custoEnvio',this.value)">
+          </div>
+          <div class="form-group">
+            <label>Sulco no Envio (mm)</label>
+            <input type="number" step="0.1" min="0" value="${r.sulcoEnvio||''}" placeholder="Ex: 8" oninput="updR(${i},'sulcoEnvio',this.value)">
+          </div>
+        </div>
+      </div>
+
+      <!-- RETORNO -->
+      ${temRetorno ? `
+      <div class="reforma-section" style="margin-top:8px;border-color:rgba(76,175,125,.3);">
+        <div class="reforma-section-title" style="color:var(--green);">📥 Retorno</div>
+        <div class="form-grid" style="gap:10px;">
+          <div class="form-group">
+            <label>Resultado</label>
+            <select onchange="updRet(${i},'resultado',this.value)">
+              <option value="">Selecione...</option>
+              ${resultadoOptionsFor(r.tipoEnvio).map(op=>`<option${r.retorno.resultado===op?' selected':''}>${op}</option>`).join('')}
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Data de Retorno</label>
+            <input type="date" value="${r.retorno.data||''}" onchange="updRet(${i},'data',this.value)">
+          </div>
+          <div class="form-group">
+            <label>Responsável pelo Recebimento</label>
+            <input type="text" value="${r.retorno.responsavel||''}" placeholder="Nome..." oninput="updRet(${i},'responsavel',this.value)">
+          </div>
+          <div class="form-group">
+            <label>Observação</label>
+            <input type="text" value="${r.retorno.obs||''}" placeholder="Obs..." oninput="updRet(${i},'obs',this.value)">
+          </div>
+          ${custoRetornoAplicavel(r.retorno.resultado)?`
+          <div class="form-group">
+            <label>Custo da Reforma (R$)</label>
+            <input type="number" step="0.01" min="0" value="${r.retorno.custoRetorno||''}" placeholder="0,00" oninput="updRet(${i},'custoRetorno',this.value)">
+          </div>`:''}
+        </div>
+        ${r.retorno.resultado && !r.retorno.resultado.includes('Irreparável')?`
+        <div style="margin-top:8px;font-size:11px;color:var(--muted);">📏 Sulco no retorno: <strong style="color:var(--light)">${r.retorno.sulcoRetorno!=null?r.retorno.sulcoRetorno+'mm':'—'}</strong> ${r.retorno.resultado==='Recapagem'?'(padrão de recapagem) · Retorno de recapagem não tem custo':'(mesmo mm do envio)'}</div>`:''}
+      </div>` : `
+      <div class="retorno-pendente" style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+        <span>⏳ Aguardando retorno do fornecedor</span>
+        ${editingPneuId?`<button class="btn btn-retorno btn-sm" onclick="openRetornoFromModal(${i})">↩ Registrar Retorno</button>`:''}
+      </div>`}
+    </div>`;
+  }).join('');
+  if(!editingPneuId && tempReformas.some(r=>!r.retorno||!r.retorno.data)){
+    lista.innerHTML += `<p style="font-size:12px;color:var(--muted);margin-top:4px;">Salve o pneu primeiro para poder registrar o retorno desta reforma.</p>`;
+  }
+}
+
+// Abre o modal de retorno a partir de dentro do cadastro do pneu (sem precisar
+// fechar, achar a linha na tabela de novo e clicar em "↩ Retorno")
+function openRetornoFromModal(i){
+  savePneu(); // garante que o envio recém-adicionado já está salvo
+  closeModal('modal-pneu');
+  openRetorno(editingPneuId===null?pneus[pneus.length-1].id:editingPneuId, i);
+}
+
+function addReforma(){
+  let sulcoSugerido='';
+  if(editingPneuId){
+    const p=pneus.find(x=>x.id===editingPneuId);
+    const meds=(p?.medicoes||[]).slice().sort((a,b)=>(parseFloat(a.km)||0)-(parseFloat(b.km)||0));
+    if(meds.length) sulcoSugerido=meds[meds.length-1].sulco;
+  }
+  tempReformas.push({tipoEnvio:'',fornecedor:'',dataEnvio:today(),responsavelEnvio:'',custoEnvio:'',sulcoEnvio:sulcoSugerido,retorno:null});
+  syncStatusAuto();
+  renderReformasForm();
+}
+function removeReforma(i){ tempReformas.splice(i,1); syncStatusAuto(); renderReformasForm(); }
+function updR(i,f,v){ tempReformas[i][f]=v; }
+function updRet(i,f,v){
+  tempReformas[i].retorno[f]=v;
+  if(f==='resultado'){
+    tempReformas[i].retorno.sulcoRetorno = sulcoRetornoAuto(tempReformas[i],v);
+    if(!custoRetornoAplicavel(v)) tempReformas[i].retorno.custoRetorno='';
+  }
+  syncStatusAuto();
+  renderReformasForm();
+}
+
+// ─── MEDIÇÕES DE SULCO / KM ───────────────────────────────────
+function renderMedicoesForm(){
+  const lista = document.getElementById('medicoes-lista');
+  lista.innerHTML = tempMedicoes.map((m,i)=>`
+    <div class="reforma-card">
+      <div class="reforma-header">
+        <span class="reforma-num">${i+1}ª</span>
+        <button class="btn btn-danger btn-sm" onclick="removeMedicao(${i})">🗑 Remover</button>
+      </div>
+      <div class="form-grid" style="gap:10px;">
+        <div class="form-group"><label>Data da Medição</label>
+          <input type="date" value="${m.data||''}" onchange="updM(${i},'data',this.value)"></div>
+        <div class="form-group"><label>Km do Veículo (odômetro)</label>
+          <input type="text" inputmode="numeric" value="${m.km||''}" placeholder="Ex: 185000" onchange="updM(${i},'km',this.value.replace(/[^0-9]/g,''));renderDesgasteAnalise();" oninput="updM(${i},'km',this.value.replace(/[^0-9]/g,''))"></div>
+        <div class="form-group span-2"><label>Sulco (mm)</label>
+          <input type="text" inputmode="decimal" value="${m.sulco||''}" placeholder="Ex: 9.5" onchange="updM(${i},'sulco',this.value.replace(',','.'));renderDesgasteAnalise();" oninput="updM(${i},'sulco',this.value.replace(',','.'))"></div>
+      </div>
+    </div>`).join('');
+  renderDesgasteAnalise();
+}
+function addMedicao(){
+  tempMedicoes.push({data:today(),km:'',sulco:''});
+  renderMedicoesForm();
+}
+function removeMedicao(i){ tempMedicoes.splice(i,1); renderMedicoesForm(); }
+function updM(i,f,v){ tempMedicoes[i][f]=v; }
+
+const SULCO_MINIMO_LEGAL = 1.6; // mm — referência legal mínima de sulco (CONTRAN)
+
+function calcDesgaste(medicoes){
+  const validas = (medicoes||[])
+    .filter(m=>m.km!==''&&m.km!=null&&m.sulco!==''&&m.sulco!=null&&!isNaN(parseFloat(m.km))&&!isNaN(parseFloat(m.sulco)))
+    .map(m=>({data:m.data,km:parseFloat(m.km),sulco:parseFloat(m.sulco)}))
+    .sort((a,b)=>a.km-b.km);
+  if(validas.length<2) return {status:'insuficiente',n:validas.length};
+  const first=validas[0], last=validas[validas.length-1];
+  const kmRodados = last.km-first.km;
+  const sulcoPerdido = first.sulco-last.sulco;
+  if(kmRodados<=0) return {status:'km-invalido'};
+  if(sulcoPerdido<=0) return {status:'sem-desgaste',first,last,kmRodados};
+  const taxaPorMilKm = sulcoPerdido/kmRodados*1000;
+  const kmRestante = last.sulco>SULCO_MINIMO_LEGAL ? (last.sulco-SULCO_MINIMO_LEGAL)/(sulcoPerdido/kmRodados) : 0;
+  return {status:'ok',first,last,kmRodados,sulcoPerdido,taxaPorMilKm,kmRestante};
+}
+
+function renderAnaliseHTML(r){
+  if(!r||r.status==='insuficiente'){
+    return `<div class="reforma-section"><div class="reforma-section-title">📉 Análise de Desgaste</div>
+      <p style="font-size:12px;color:var(--muted);margin:0;">Registre pelo menos 2 medições válidas (km + sulco) para calcular o desgaste por km rodado.</p></div>`;
+  }
+  if(r.status==='km-invalido'){
+    return `<div class="reforma-section"><div class="reforma-section-title">📉 Análise de Desgaste</div>
+      <p style="font-size:12px;color:var(--red);margin:0;">As quilometragens registradas não avançam entre as medições — revise os valores de km.</p></div>`;
+  }
+  if(r.status==='sem-desgaste'){
+    return `<div class="reforma-section"><div class="reforma-section-title">📉 Análise de Desgaste</div>
+      <p style="font-size:12px;color:var(--muted);margin:0;">Entre ${fmtDate(r.first.data)} (${r.first.km.toLocaleString('pt-BR')} km · ${r.first.sulco}mm) e ${fmtDate(r.last.data)} (${r.last.km.toLocaleString('pt-BR')} km · ${r.last.sulco}mm), não houve redução de sulco detectada.</p></div>`;
+  }
+  return `<div class="reforma-section" style="border-color:rgba(232,160,32,.3)">
+    <div class="reforma-section-title">📉 Análise de Desgaste</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:12px;">
+      <div><div class="detail-key">Sulco perdido</div><div style="color:var(--white);font-weight:600">${r.sulcoPerdido.toFixed(2)} mm</div></div>
+      <div><div class="detail-key">Km rodados no período</div><div style="color:var(--white);font-weight:600">${r.kmRodados.toLocaleString('pt-BR')} km</div></div>
+      <div><div class="detail-key">Taxa de desgaste</div><div style="color:var(--accent);font-weight:600">${r.taxaPorMilKm.toFixed(3)} mm a cada 1.000 km</div></div>
+      <div><div class="detail-key">Estimativa até sulco mínimo (${SULCO_MINIMO_LEGAL}mm)</div><div style="color:var(--green);font-weight:600">${r.kmRestante>0?'~'+Math.round(r.kmRestante).toLocaleString('pt-BR')+' km restantes':'já no limite ou abaixo'}</div></div>
+    </div>
+    <p style="font-size:11px;color:var(--muted);margin-top:8px;margin-bottom:0;">Calculado entre a primeira (${fmtDate(r.first.data)} · ${r.first.km.toLocaleString('pt-BR')}km · ${r.first.sulco}mm) e a última medição (${fmtDate(r.last.data)} · ${r.last.km.toLocaleString('pt-BR')}km · ${r.last.sulco}mm). Estimativa linear — não considera mudanças de eixo, posição ou calibragem.</p>
+  </div>`;
+}
+
+function renderDesgasteAnalise(){
+  const el = document.getElementById('desgaste-analise');
+  if(!el) return;
+  el.innerHTML = renderAnaliseHTML(calcDesgaste(tempMedicoes));
+}
+
+// ─── SINCRONIZAÇÃO AUTOMÁTICA DE STATUS ──────────────────────
+// Se existe reforma sem retorno registrado -> Em Reforma.
+// Se todas as reformas têm retorno -> Ativo.
+// Nunca mexe se o status atual for Sucata (isso é sempre manual).
+function syncStatusAuto(){
+  const sel = document.getElementById('pf-status');
+  if(sel.value==='Sucata') return;
+  const pendente = tempReformas.some(r=>!r.retorno || !r.retorno.data);
+  sel.value = pendente ? 'Em Reforma' : 'Ativo';
+  onStatusChange();
+}
+
+// ─── HISTÓRICO DE MOVIMENTAÇÕES DO PNEU ─────────────────────
+function buildTimeline(p){
+  const events=[];
+  // Cadastro
+  if(p.dataCadastro){
+    events.push({date:p.dataCadastro,tipo:'cadastro',icon:'🛞',
+      title:'Pneu Cadastrado',
+      sub:`Fogo ${p.fogo} · ${p.marca} ${p.modelo||''} ${p.medida?'· '+p.medida:''}`,
+      dotClass:'tl-dot-cadastro'});
+  }
+  // Reformas
+  (p.reformas||[]).forEach((r,i)=>{
+    if(r.dataEnvio){
+      events.push({date:r.dataEnvio,tipo:'envio',icon:'📤',
+        title:`${i+1}º Envio para Reforma`,
+        sub:`${r.tipoEnvio||'—'} → ${r.fornecedor||'—'}${r.responsavelEnvio?' · Resp: '+r.responsavelEnvio:''}`,
+        dotClass:'tl-dot-envio'});
+    }
+    if(r.retorno?.data){
+      const isSucataRes=r.retorno.resultado?.includes('Irreparável');
+      events.push({date:r.retorno.data,tipo:'retorno',icon:isSucataRes?'🚫':'📥',
+        title:`${i+1}º Retorno de Reforma`,
+        sub:`${r.retorno.resultado||'—'}${r.retorno.responsavel?' · Recebido por: '+r.retorno.responsavel:''}${r.retorno.obs?' · '+r.retorno.obs:''}`,
+        dotClass:isSucataRes?'tl-dot-sucata-reforma':'tl-dot-retorno'});
+    }
+  });
+  // Histórico de posição
+  (p.posicaoHistorico||[]).forEach(h=>{
+    events.push({date:h.data,tipo:'posicao',icon:'📍',
+      title:'Mudança de Posição',
+      sub:`${h.de} → ${h.para}`,
+      dotClass:'tl-dot-cadastro'});
+  });
+  // Sucata
+  if(p.status==='Sucata'&&p.sucata?.data){
+    events.push({date:p.sucata.data,tipo:'sucata',icon:'♻️',
+      title:'Baixado como Sucata',
+      sub:`Motivo: ${p.sucata.motivo||'—'}${p.sucata.obs?' · '+p.sucata.obs:''}`,
+      dotClass:'tl-dot-sucata'});
+  }
+  return events.sort((a,b)=>a.date.localeCompare(b.date));
+}
+
+function renderHistorico(){
+  const p = editingPneuId ? pneus.find(x=>x.id===editingPneuId) : null;
+  const container = document.getElementById('historico-timeline');
+  const countEl = document.getElementById('hist-filter-count');
+  if(!container) return;
+
+  // Use temp state if editing
+  const pTemp = p ? {...p, reformas:tempReformas, medicoes:tempMedicoes} : null;
+  if(!pTemp){ container.innerHTML='<p style="color:var(--muted);font-size:13px;">Salve o pneu primeiro para ver o histórico.</p>'; countEl.textContent=''; return; }
+
+  const filterDate = document.getElementById('hist-filter-date').value;
+  const filterTipo = document.getElementById('hist-filter-tipo')?.value||'';
+  let events = buildTimeline(pTemp);
+  if(filterDate) events = events.filter(e=>e.date===filterDate);
+  if(filterTipo) events = events.filter(e=>e.tipo===filterTipo);
+
+  countEl.textContent = filterDate ? `${events.length} evento(s) em ${fmtDate(filterDate)}` : `${events.length} evento(s) no total`;
+
+  if(!events.length){
+    container.innerHTML=`<p style="color:var(--muted);font-size:13px;">${filterDate?'Nenhuma movimentação nesta data.':'Nenhuma movimentação registrada.'}</p>`;
+    return;
+  }
+
+  container.innerHTML=`<div class="timeline">${events.map(e=>`
+    <div class="tl-item">
+      <div class="tl-dot ${e.dotClass}"></div>
+      <div class="tl-card">
+        <div class="tl-date">${e.icon} ${fmtDate(e.date)}</div>
+        <div class="tl-title">${e.title}</div>
+        <div class="tl-sub">${e.sub}</div>
+      </div>
+    </div>`).join('')}</div>`;
+}
+
+// ─── FILTRO POR DATA NA LISTA PRINCIPAL ──────────────────────
+function clearDateFilter(){
+  document.getElementById('filter-data-mov').value='';
+  document.getElementById('filter-tipo-mov').value='';
+  renderPneus();
+}
+
+function pneuHasMovOnDate(p, date, tipo){
+  if(!date) return true;
+  const events = buildTimeline(p);
+  return events.some(e=>{
+    if(e.date!==date) return false;
+    if(!tipo) return true;
+    return e.tipo===tipo;
+  });
+}
+
+// ─── SALVAR PNEU ─────────────────────────────────────────────
+function savePneu(){
+  const fogo = document.getElementById('pf-fogo').value.trim();
+  if(!fogo){alert('Informe o número do Fogo.');return;}
+  const marca = document.getElementById('pf-marca').value;
+  if(!marca){alert('Selecione a Marca.');return;}
+  syncStatusAuto();
+  const status = document.getElementById('pf-status').value;
+  const veiculoId = document.getElementById('pf-veiculo').value;
+
+  let sucata = null;
+  if(status==='Sucata'){
+    sucata = {
+      motivo: document.getElementById('pf-sucata-motivo').value,
+      data:   document.getElementById('pf-sucata-data').value || today(),
+      obs:    document.getElementById('pf-sucata-obs').value,
+    };
+  }
+
+  const data = {
+    fogo, marca,
+    dot:     document.getElementById('pf-dot').value.trim(),
+    dataCadastro: document.getElementById('pf-data-cadastro').value || today(),
+    modelo:  document.getElementById('pf-modelo').value,
+    medida:  document.getElementById('pf-medida').value,
+    status, sucata,
+    veiculoId,
+    posicao: veiculoId ? document.getElementById('pf-posicao').value : '',
+    reformas: tempReformas,
+    medicoes: tempMedicoes,
+  };
+
+  if(editingPneuId){
+    const i=pneus.findIndex(x=>x.id===editingPneuId);
+    const antigo=pneus[i];
+    // Rastrear mudança de posição/veículo
+    const posHist=antigo.posicaoHistorico||[];
+    const novaPos=`${data.veiculoId?veiculos.find(v=>v.id===data.veiculoId)?.placa||'?':'Sem veículo'}${data.posicao?' · '+data.posicao:''}`;
+    const antigoPos=`${antigo.veiculoId?veiculos.find(v=>v.id===antigo.veiculoId)?.placa||'?':'Sem veículo'}${antigo.posicao?' · '+antigo.posicao:''}`;
+    if(novaPos!==antigoPos){
+      posHist.push({data:today(),de:antigoPos,para:novaPos});
+    }
+    pneus[i]={...antigo,...data,posicaoHistorico:posHist};
+  } else {
+    const posHist=[];
+    if(data.veiculoId){
+      const vn=veiculos.find(v=>v.id===data.veiculoId);
+      posHist.push({data:data.dataCadastro||today(),de:'—',para:`${vn?.placa||'?'}${data.posicao?' · '+data.posicao:''}`});
+    }
+    pneus.push({id:uid(),...data,posicaoHistorico:posHist});
+  }
+  save(); closeModal('modal-pneu'); renderPneus(); renderDashboard(); updateAlertaBadge();
+}
+
+// ─── RETORNO RÁPIDO (botão na tabela) ────────────────────────
+function openRetorno(pneuId,idxParam){
+  const p = pneus.find(x=>x.id===pneuId);
+  // pega a última reforma sem retorno, a menos que um índice específico tenha sido passado
+  const idx = idxParam!==undefined ? idxParam : p.reformas.findLastIndex(r=>!r.retorno||!r.retorno.data);
+  if(idx===-1){ alert('Todas as reformas já têm retorno registrado. Abra o pneu para editar.'); return; }
+  retornoPneuId = pneuId;
+  retormaIdx    = idx;
+  const r = p.reformas[idx];
+  document.getElementById('retorno-info').textContent =
+    `Pneu Fogo ${p.fogo} · ${r.tipoEnvio||'Envio'} → ${r.fornecedor||'Fornecedor'} (enviado em ${fmtDate(r.dataEnvio)})`;
+  const selResultado = document.getElementById('ret-resultado');
+  selResultado.innerHTML = `<option value="">Selecione...</option>` +
+    resultadoOptionsFor(r.tipoEnvio).map(op=>`<option>${op}</option>`).join('');
+  document.getElementById('ret-data').value        = today();
+  selResultado.value                                = '';
+  document.getElementById('ret-responsavel').value = '';
+  document.getElementById('ret-custo').value       = '';
+  document.getElementById('ret-obs').value         = '';
+  onRetResultadoChange();
+  openModal('modal-retorno');
+}
+
+// Mostra/oculta o campo de custo (recapagem não tem custo no retorno) e a
+// informação de sulco automático conforme o resultado selecionado
+function onRetResultadoChange(){
+  const resultado = document.getElementById('ret-resultado').value;
+  const p = pneus.find(x=>x.id===retornoPneuId);
+  const r = p?.reformas?.[retormaIdx];
+  document.getElementById('ret-custo-group').style.display = custoRetornoAplicavel(resultado) ? '' : 'none';
+  if(!custoRetornoAplicavel(resultado)) document.getElementById('ret-custo').value='';
+  const info = document.getElementById('ret-sulco-info');
+  if(resultado && !resultado.includes('Irreparável') && r){
+    const sulco = sulcoRetornoAuto(r,resultado);
+    info.style.display='';
+    info.textContent = resultado==='Recapagem'
+      ? `📏 Sulco no retorno: ${sulco!=null?sulco+'mm':'—'} (padrão de recapagem) · Retorno de recapagem não tem custo`
+      : `📏 Sulco no retorno: ${sulco!=null?sulco+'mm':'— (sulco no envio não informado)'} (mesmo mm do envio)`;
+  } else {
+    info.style.display='none'; info.textContent='';
+  }
+}
+
+function saveRetorno(){
+  const resultado = document.getElementById('ret-resultado').value;
+  if(!resultado){alert('Selecione o resultado.');return;}
+  const p = pneus.find(x=>x.id===retornoPneuId);
+  const r = p.reformas[retormaIdx];
+  r.retorno = {
+    resultado,
+    data:          document.getElementById('ret-data').value,
+    responsavel:   document.getElementById('ret-responsavel').value,
+    custoRetorno:  custoRetornoAplicavel(resultado) ? document.getElementById('ret-custo').value : '',
+    sulcoRetorno:  sulcoRetornoAuto(r,resultado),
+    obs:           document.getElementById('ret-obs').value,
+  };
+  // pneu volta sempre "sem veículo" — precisa ser reassociado manualmente
+  p.veiculoId='';
+  p.posicao='';
+  // se voltou, status volta para Ativo (exceto se virou sucata)
+  if(resultado==='Irreparável (virou sucata)'){
+    p.status='Sucata';
+    p.sucata = { motivo:'Recapagem inviável', data: document.getElementById('ret-data').value, obs:'Retornou irreparável do fornecedor' };
+  } else {
+    if(p.status==='Em Reforma') p.status='Ativo';
+  }
+  save(); closeModal('modal-retorno'); renderPneus(); renderDashboard(); updateAlertaBadge();
+}
+
+// ─── SUCATA RÁPIDO (botão na tabela) ─────────────────────────
+function openSucataQuick(id){
+  sucataQuickId = id;
+  const p = pneus.find(x=>x.id===id);
+  document.getElementById('sucata-info').textContent = `Pneu Fogo ${p.fogo} · ${p.marca} ${p.modelo||''} — essa ação é definitiva.`;
+  document.getElementById('sq-motivo').value = '';
+  document.getElementById('sq-data').value   = today();
+  document.getElementById('sq-obs').value    = '';
+  openModal('modal-sucata');
+}
+
+function saveSucata(){
+  const motivo = document.getElementById('sq-motivo').value;
+  if(!motivo){alert('Selecione o motivo.');return;}
+  const p = pneus.find(x=>x.id===sucataQuickId);
+  p.status = 'Sucata';
+  p.sucata = {
+    motivo,
+    data: document.getElementById('sq-data').value||today(),
+    obs:  document.getElementById('sq-obs').value,
+  };
+  // desvincular do ônibus
+  p.veiculoId=''; p.posicao='';
+  save(); closeModal('modal-sucata'); renderPneus(); renderDashboard();
+}
+
+// ─── VEÍCULO ─────────────────────────────────────────────────
+function openVeiculoModal(id){
+  editingVeiculoId=id||null;
+  const v=id?veiculos.find(x=>x.id===id):null;
+  document.getElementById('modal-veiculo-title').textContent=v?'Editar Ônibus':'Novo Ônibus';
+  document.getElementById('vf-placa').value  = v?.placa||'';
+  document.getElementById('vf-frota').value  = v?.frota||'';
+  document.getElementById('vf-desc').value   = v?.descricao||'';
+  document.getElementById('vf-ano').value    = v?.ano||'';
+  document.getElementById('vf-chassi').value = v?.chassi||'';
+  openModal('modal-veiculo');
+}
+function saveVeiculo(){
+  const placa=document.getElementById('vf-placa').value.trim().toUpperCase();
+  if(!placa){alert('Informe a Placa.');return;}
+  const data={placa,frota:document.getElementById('vf-frota').value.trim(),descricao:document.getElementById('vf-desc').value.trim(),ano:document.getElementById('vf-ano').value.trim(),chassi:document.getElementById('vf-chassi').value.trim()};
+  if(editingVeiculoId){const i=veiculos.findIndex(x=>x.id===editingVeiculoId);veiculos[i]={...veiculos[i],...data};}
+  else veiculos.push({id:uid(),...data});
+  save(); closeModal('modal-veiculo'); renderVeiculos(); renderDashboard();
+}
+
+// ─── DELETE ───────────────────────────────────────────────────
+function confirmDelete(msg,fn){
+  document.getElementById('confirm-msg').textContent=msg;
+  document.getElementById('confirm-btn').onclick=()=>{fn();closeModal('modal-confirm');};
+  openModal('modal-confirm');
+}
+function deletePneu(id){
+  const p=pneus.find(x=>x.id===id);
+  confirmDelete(`Excluir pneu Fogo ${p.fogo}?`,()=>{pneus=pneus.filter(x=>x.id!==id);save();renderPneus();renderDashboard();});
+}
+function deleteVeiculo(id){
+  const v=veiculos.find(x=>x.id===id);
+  confirmDelete(`Excluir ônibus ${v.placa}?`,()=>{
+    pneus=pneus.map(p=>p.veiculoId===id?{...p,veiculoId:'',posicao:''}:p);
+    veiculos=veiculos.filter(x=>x.id!==id);
+    save();renderVeiculos();renderDashboard();
+  });
+}
+
+// ─── RENDER PNEUS ─────────────────────────────────────────────
+function renderPneus(){
+  const q       = document.getElementById('search-pneus').value.toLowerCase();
+  const fMarca  = document.getElementById('filter-marca').value;
+  const fMedida = document.getElementById('filter-medida').value;
+  const fStatus = document.getElementById('filter-status').value;
+
+  const mf=document.getElementById('filter-marca'); const cur=mf.value;
+  const marcas=[...new Set(pneus.map(p=>p.marca).filter(Boolean))].sort();
+  mf.innerHTML='<option value="">Todas as marcas</option>';
+  marcas.forEach(m=>mf.innerHTML+=`<option${cur===m?' selected':''}>${m}</option>`);
+
+  const fDataMov = document.getElementById('filter-data-mov').value;
+  const fTipoMov = document.getElementById('filter-tipo-mov').value;
+
+  let filtered=pneus.filter(p=>{
+    const qok=!q||[p.fogo,p.dot,p.marca,p.modelo,p.medida].join(' ').toLowerCase().includes(q);
+    const mok=!fMarca||p.marca===fMarca;
+    const medk=!fMedida||p.medida===fMedida;
+    const sok=!fStatus||p.status===fStatus;
+    const dok=!fDataMov||pneuHasMovOnDate(p,fDataMov,fTipoMov);
+    return qok&&mok&&medk&&sok&&dok;
+  });
+
+  // Atualiza resultado do filtro de data
+  const resEl=document.getElementById('date-filter-result');
+  if(fDataMov){
+    const tipoLabel=fTipoMov?{envio:'Envio',retorno:'Retorno',cadastro:'Cadastro',sucata:'Sucata'}[fTipoMov]||fTipoMov:'movimentação';
+    resEl.textContent=`${filtered.length} pneu(s) com ${tipoLabel} em ${fmtDate(fDataMov)}`;
+    resEl.style.display='';
+  } else { resEl.style.display='none'; }
+
+  const tbody=document.getElementById('pneus-tbody');
+  const empty=document.getElementById('pneus-empty');
+  if(!filtered.length){tbody.innerHTML='';empty.style.display='';return;}
+  empty.style.display='none';
+
+  tbody.innerHTML=filtered.map(p=>{
+    const v=veiculos.find(x=>x.id===p.veiculoId);
+    const nRecap=contarRecapagens(p);
+    const nConserto=(p.reformas||[]).filter(r=>r.retorno?.resultado==='Conserto').length;
+    const emReforma=p.status==='Em Reforma';
+    const isSucata=p.status==='Sucata';
+
+    return `<tr>
+      <td><span class="tag-fogo">🛞 ${p.fogo}</span></td>
+      <td style="color:var(--muted);font-size:12px">${p.dot||'—'}</td>
+      <td style="color:var(--muted);font-size:12px">📅 ${fmtDate(p.dataCadastro)}</td>
+      <td><strong>${p.marca}</strong><br><span style="font-size:11px;color:var(--muted)">${p.modelo||''}</span></td>
+      <td><span class="badge badge-gray">${p.medida||'—'}</span></td>
+      <td>
+        <span class="badge ${nRecap===0?'badge-gray':nRecap<3?'badge-yellow':'badge-red'}">${nRecap} recapagem${nRecap!==1?'s':''}</span>
+        ${nConserto?`<br><span class="badge badge-blue" style="margin-top:3px">${nConserto} conserto${nConserto!==1?'s':''}</span>`:''}
+      </td>
+      <td>${v?`<span class="badge badge-blue">${v.placa}</span>${p.posicao?`<br><span style="font-size:10px;color:var(--muted)">${p.posicao}</span>`:''}` :'<span style="color:var(--muted);font-size:12px">—</span>'}</td>
+      <td>${statusBadge(p)}</td>
+      <td>
+        <div class="actions">
+          <button class="btn btn-ghost btn-sm" onclick="showPneuDetail('${p.id}')">Ver</button>
+          <button class="btn btn-ghost btn-sm" onclick="openPneuModal('${p.id}')">✏️</button>
+          ${emReforma?`<button class="btn btn-retorno btn-sm" onclick="openRetorno('${p.id}')">↩ Retorno</button>`:''}
+          ${!isSucata?`<button class="btn btn-sucata btn-sm" onclick="openSucataQuick('${p.id}')">♻️ Sucata</button>`:''}
+          <button class="btn btn-danger btn-sm" onclick="deletePneu('${p.id}')">🗑</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ─── DETALHE PNEU ─────────────────────────────────────────────
+function showPneuDetail(id){
+  const p=pneus.find(x=>x.id===id);
+  const v=veiculos.find(x=>x.id===p.veiculoId);
+  const reformas=p.reformas||[];
+  const medicoes=(p.medicoes||[]).slice().sort((a,b)=>(parseFloat(a.km)||0)-(parseFloat(b.km)||0));
+  const ultima = medicoes.length?medicoes[medicoes.length-1]:null;
+  const nRecap=contarRecapagens(p);
+  const custoTotal=custoPorPneu(p);
+
+  document.getElementById('modal-detail-body').innerHTML=`
+    ${p.status==='Sucata'?`<div class="sucata-banner"><div class="sucata-banner-title">⚠️ Pneu em Sucata</div><div class="sucata-banner-info">Motivo: ${p.sucata?.motivo||'—'} · Data: ${fmtDate(p.sucata?.data)} ${p.sucata?.obs?'· '+p.sucata.obs:''}</div></div>`:''}
+    <div class="detail-grid">
+      <div><div class="detail-key">Fogo</div><div class="detail-val" style="font-size:22px;color:var(--accent);font-family:'Space Grotesk',sans-serif">🛞 ${p.fogo}</div></div>
+      <div><div class="detail-key">DOT</div><div class="detail-val">${p.dot||'—'}</div></div>
+      <div><div class="detail-key">📅 Data de Cadastro</div><div class="detail-val">${fmtDate(p.dataCadastro)}</div></div>
+      <div><div class="detail-key">Marca</div><div class="detail-val">${p.marca}</div></div>
+      <div><div class="detail-key">Modelo</div><div class="detail-val">${p.modelo||'—'}</div></div>
+      <div><div class="detail-key">Medida</div><div class="detail-val">${p.medida||'—'}</div></div>
+      <div><div class="detail-key">Status</div><div class="detail-val">${statusBadge(p)}</div></div>
+      <div><div class="detail-key">Ônibus</div><div class="detail-val">${v?v.placa+(p.posicao?' · '+p.posicao:''):'—'}</div></div>
+      <div><div class="detail-key">Recapagens</div><div class="detail-val">${nRecap}</div></div>
+      <div><div class="detail-key">📏 Último Sulco</div><div class="detail-val">${ultima?ultima.sulco+'mm · '+parseFloat(ultima.km).toLocaleString('pt-BR')+'km ('+fmtDate(ultima.data)+')':'—'}</div></div>
+      <div><div class="detail-key">💰 Custo Total em Reformas</div><div class="detail-val" style="color:#ff8800">R$ ${fmtMoeda(custoTotal)}</div></div>
+    </div>
+    <div style="margin-bottom:10px;font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--muted)">Medições de Sulco (${medicoes.length})</div>
+    ${renderAnaliseHTML(calcDesgaste(p.medicoes))}
+    ${medicoes.length?`<div style="margin-top:10px;">${medicoes.map(m=>`<div class="link-row"><div class="link-dot"></div><div style="flex:1;font-size:12px;"><strong>${m.sulco}mm</strong> · ${parseFloat(m.km).toLocaleString('pt-BR')}km · ${fmtDate(m.data)}</div></div>`).join('')}</div>`:''}
+    <div style="margin-bottom:10px;margin-top:20px;font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--muted)">📜 Histórico de Movimentações</div>
+    ${(()=>{
+      const events=buildTimeline(p);
+      if(!events.length) return '<p style="color:var(--muted);font-size:13px;margin-bottom:20px;">Nenhuma movimentação registrada.</p>';
+      return `<div class="timeline" style="margin-bottom:20px;">${events.map(e=>`
+        <div class="tl-item">
+          <div class="tl-dot ${e.dotClass}"></div>
+          <div class="tl-card">
+            <div class="tl-date">${e.icon} ${fmtDate(e.date)}</div>
+            <div class="tl-title">${e.title}</div>
+            <div class="tl-sub">${e.sub}</div>
+          </div>
+        </div>`).join('')}</div>`;
+    })()}
+    <div style="margin-bottom:10px;margin-top:4px;font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--muted)">Histórico de Envios para Reforma (${reformas.length})</div>
+    ${reformas.length?reformas.map((r,i)=>{
+      const isRecap = r.retorno?.resultado==='Recapagem';
+      const isConserto = r.retorno?.resultado==='Conserto';
+      const isSucata = r.retorno?.resultado?.includes('Irreparável');
+      const custoR=custoReforma(r);
+      return`<div class="reforma-card" style="margin-bottom:10px">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+          <span class="reforma-num">${i+1}º</span>
+          <div style="flex:1">
+            <div style="font-weight:600;font-size:13px">${r.tipoEnvio||'—'} → ${r.fornecedor||'—'}</div>
+            <div style="font-size:11px;color:var(--muted)">Enviado em ${fmtDate(r.dataEnvio)} · ${r.responsavelEnvio||'—'}${r.custoEnvio?' · Envio: R$ '+fmtMoeda(r.custoEnvio):''}</div>
+          </div>
+          ${custoR>0?`<div style="text-align:right"><div class="detail-key">Custo Total</div><div style="color:#ff8800;font-weight:700;font-size:13px">R$ ${fmtMoeda(custoR)}</div></div>`:''}
+        </div>
+        ${r.retorno?.data?`
+        <div style="background:rgba(76,175,125,.06);border:1px solid rgba(76,175,125,.2);border-radius:6px;padding:10px 12px;">
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--green);margin-bottom:6px">📥 Retorno</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px;">
+            <div><div class="detail-key">Resultado</div>
+              <span class="badge ${isRecap?'badge-yellow':isConserto?'badge-blue':isSucata?'badge-orange':'badge-gray'}">${r.retorno.resultado}</span>
+            </div>
+            <div><div class="detail-key">Data Retorno</div><div style="color:var(--white)">${fmtDate(r.retorno.data)}</div></div>
+            <div><div class="detail-key">Recebido por</div><div style="color:var(--white)">${r.retorno.responsavel||'—'}</div></div>
+            <div><div class="detail-key">📏 Sulco no Retorno</div><div style="color:var(--white)">${r.retorno.sulcoRetorno!=null?r.retorno.sulcoRetorno+'mm':'—'}</div></div>
+            <div><div class="detail-key">Custo da Reforma</div><div style="color:var(--white)">${isRecap?'Sem custo (recapagem)':(r.retorno.custoRetorno?'R$ '+fmtMoeda(r.retorno.custoRetorno):'—')}</div></div>
+            <div><div class="detail-key">Obs</div><div style="color:var(--white)">${r.retorno.obs||'—'}</div></div>
+          </div>
+        </div>`:`<div class="retorno-pendente">⏳ Aguardando retorno do fornecedor</div>`}
+      </div>`;
+    }).join(''):'<p style="color:var(--muted);font-size:13px">Nenhum envio registrado.</p>'}
+  `;
+  openModal('modal-detail');
+}
+
+// ─── RENDER VEÍCULOS ──────────────────────────────────────────
+function renderVeiculos(){
+  const q=document.getElementById('search-veiculos').value.toLowerCase();
+  let filtered=veiculos.filter(v=>!q||[v.placa,v.descricao,v.frota,v.chassi].join(' ').toLowerCase().includes(q));
+  const grid=document.getElementById('veiculos-grid');
+  const empty=document.getElementById('veiculos-empty');
+  if(!filtered.length){grid.innerHTML='';empty.style.display='';return;}
+  empty.style.display='none';
+  grid.innerHTML=filtered.map(v=>{
+    const tires=pneus.filter(p=>p.veiculoId===v.id);
+    return`<div class="vehicle-card" onclick="showVeiculoDetail('${v.id}')">
+      <div class="vehicle-card-head">
+        <div>
+          <div class="vehicle-plate">${v.placa}</div>
+          <div class="vehicle-name">${[v.frota,v.descricao].filter(Boolean).join(' · ')}</div>
+        </div>
+        <div style="display:flex;gap:4px">
+          <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openVeiculoModal('${v.id}')">✏️</button>
+          <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteVeiculo('${v.id}')">🗑</button>
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:6px">${tires.length} pneu(s) associado(s)</div>
+      <div class="vehicle-tires">
+        ${tires.length?tires.map(p=>`<div class="tire-chip"><span>🛞</span><span>${p.fogo}</span>${p.posicao?`<span style="color:var(--muted);font-size:10px">${p.posicao.split(' ').map(w=>w[0]).join('')}</span>`:''}</div>`).join(''):'<div style="font-size:12px;color:var(--muted);font-style:italic">Nenhum pneu</div>'}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function showVeiculoDetail(id){
+  const v=veiculos.find(x=>x.id===id);
+  const tires=pneus.filter(p=>p.veiculoId===id);
+  document.getElementById('vd-title').textContent=`Ônibus · ${v.placa}`;
+  document.getElementById('modal-veiculo-detail-body').innerHTML=`
+    <div class="detail-grid" style="margin-bottom:20px">
+      <div><div class="detail-key">Placa</div><div class="detail-val" style="font-size:22px;font-family:'Space Grotesk',sans-serif;color:var(--accent)">${v.placa}</div></div>
+      <div><div class="detail-key">Frota</div><div class="detail-val">${v.frota||'—'}</div></div>
+      <div><div class="detail-key">Descrição</div><div class="detail-val">${v.descricao||'—'}</div></div>
+      <div><div class="detail-key">Ano</div><div class="detail-val">${v.ano||'—'}</div></div>
+      <div><div class="detail-key">Chassi / Marca</div><div class="detail-val">${v.chassi||'—'}</div></div>
+    </div>
+    <div style="margin-bottom:10px;font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--muted)">Pneus Associados (${tires.length})</div>
+    ${tires.length?`<div>${tires.map(p=>`<div class="link-row"><div class="link-dot"></div><div style="flex:1"><div style="font-weight:600;font-size:13px">🛞 Fogo ${p.fogo} · ${p.marca} ${p.modelo||''} ${p.medida?'· '+p.medida:''}</div><div style="font-size:11px;color:var(--muted)">${p.posicao||'Posição não definida'} · DOT ${p.dot||'—'}</div></div>${statusBadge(p)}</div>`).join('')}</div>`:'<p style="color:var(--muted);font-size:13px">Nenhum pneu.</p>'}
+  `;
+  openModal('modal-veiculo-detail');
+}
+
+// ─── DASHBOARD ────────────────────────────────────────────────
+function renderDashboard(){
+  const total    = pneus.length;
+  const vTot     = veiculos.length;
+  const emRef    = pneus.filter(p=>p.status==='Em Reforma').length;
+  const sucatas  = pneus.filter(p=>p.status==='Sucata').length;
+  const nRecap   = pneus.reduce((a,p)=>a+contarRecapagens(p),0);
+  const nConserto= pneus.reduce((a,p)=>a+(p.reformas||[]).filter(r=>r.retorno?.resultado==='Conserto').length,0);
+
+  let custoTotalFrota=0, pneuMaisCaro=null;
+  pneus.forEach(p=>{
+    const c=custoPorPneu(p);
+    custoTotalFrota+=c;
+    if(c>0 && (!pneuMaisCaro||c>pneuMaisCaro.custo)) pneuMaisCaro={fogo:p.fogo,custo:c};
+  });
+
+  document.getElementById('dash-stats').innerHTML=`
+    <div class="stat-card"><div class="stat-label">Total de Pneus</div><div class="stat-value" style="color:var(--accent)">🛞 ${total}</div><div class="stat-sub">cadastrados</div></div>
+    <div class="stat-card"><div class="stat-label">Ônibus</div><div class="stat-value" style="color:var(--blue)">🚌 ${vTot}</div><div class="stat-sub">na frota</div></div>
+    <div class="stat-card"><div class="stat-label">Em Reforma</div><div class="stat-value" style="color:var(--purple)">🔧 ${emRef}</div><div class="stat-sub">aguardando retorno</div></div>
+    <div class="stat-card"><div class="stat-label">Total Recapagens</div><div class="stat-value" style="color:var(--green)">🔄 ${nRecap}</div><div class="stat-sub">${nConserto} consertos</div></div>
+    <div class="stat-card"><div class="stat-label">Sucata</div><div class="stat-value" style="color:#ff8800">♻️ ${sucatas}</div><div class="stat-sub">pneus baixados</div></div>
+    <div class="stat-card"><div class="stat-label">Custo em Reformas</div><div class="stat-value" style="color:#ff8800;font-size:22px">R$ ${fmtMoeda(custoTotalFrota)}</div><div class="stat-sub">${pneuMaisCaro?`Mais caro: Fogo ${pneuMaisCaro.fogo} (R$ ${fmtMoeda(pneuMaisCaro.custo)})`:'nenhum custo registrado'}</div></div>
+  `;
+
+  const marcaCount={};
+  pneus.forEach(p=>{if(p.marca)marcaCount[p.marca]=(marcaCount[p.marca]||0)+1;});
+  const maxM=Math.max(...Object.values(marcaCount),1);
+  document.getElementById('dash-marcas').innerHTML=Object.entries(marcaCount).length
+    ?Object.entries(marcaCount).sort((a,b)=>b[1]-a[1]).map(([m,c])=>`
+      <div style="margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px;font-size:12px"><span>${m}</span><span style="color:var(--muted)">${c}</span></div>
+        <div style="background:var(--dark);border-radius:4px;height:6px;overflow:hidden"><div style="background:var(--accent);height:100%;width:${c/maxM*100}%;border-radius:4px"></div></div>
+      </div>`).join('')
+    :'<p style="color:var(--muted);font-size:13px">Nenhum dado.</p>';
+
+  const fCount={};
+  pneus.forEach(p=>(p.reformas||[]).forEach(r=>{if(r.fornecedor)fCount[r.fornecedor]=(fCount[r.fornecedor]||0)+1;}));
+  const maxF=Math.max(...Object.values(fCount),1);
+  document.getElementById('dash-fornecedores').innerHTML=Object.entries(fCount).length
+    ?Object.entries(fCount).sort((a,b)=>b[1]-a[1]).map(([f,c])=>`
+      <div style="margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px;font-size:12px"><span>${f}</span><span style="color:var(--muted)">${c}x</span></div>
+        <div style="background:var(--dark);border-radius:4px;height:6px;overflow:hidden"><div style="background:var(--blue);height:100%;width:${c/maxF*100}%;border-radius:4px"></div></div>
+      </div>`).join('')
+    :'<p style="color:var(--muted);font-size:13px">Nenhuma reforma registrada.</p>';
+
+  renderGrafico();
+  renderTempoMedio();
+  updateAlertaBadge();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ─── COMPARAÇÃO DE FORNECEDORES (lado a lado) ───────────────────
+// ═══════════════════════════════════════════════════════════════
+function renderFornecedores(){
+  const stats=estatisticasFornecedores();
+  const fornecedores=Object.keys(stats).filter(f=>stats[f].atendimentos>0);
+  const el=document.getElementById('fornecedores-content');
+
+  if(!fornecedores.length){
+    el.innerHTML=`<div class="empty-state"><div class="empty-icon">🏭</div><div class="empty-title">Nenhum atendimento registrado</div><div class="empty-sub">Envie pneus para reforma para começar a comparar fornecedores.</div></div>`;
+    return;
+  }
+
+  const linhas=[
+    {label:'Atendimentos',calc:f=>stats[f].atendimentos,fmt:v=>v,best:'max'},
+    {label:'Tempo Médio de Retorno',calc:f=>stats[f].tempoN?Math.round(stats[f].tempoTotal/stats[f].tempoN):null,fmt:v=>v===null?'—':v+' dias',best:'min'},
+    {label:'Taxa de Sucata',calc:f=>stats[f].comRetorno?Math.round(stats[f].sucatas/stats[f].comRetorno*100):null,fmt:v=>v===null?'—':v+'%',best:'min'},
+    {label:'Custo Médio por Reforma',calc:f=>stats[f].custoN?stats[f].custoTotal/stats[f].custoN:null,fmt:v=>v===null?'—':'R$ '+fmtMoeda(v),best:'min'},
+  ];
+
+  el.innerHTML=`
+    <div class="table-wrap compare-table-wrap" style="margin-bottom:20px;">
+      <table class="compare-table">
+        <thead><tr>
+          <th>Métrica</th>
+          ${fornecedores.map(f=>`<th><span class="compare-forn-name">🏭 ${f}</span></th>`).join('')}
+        </tr></thead>
+        <tbody>
+          ${linhas.map(l=>{
+            const valores=fornecedores.map(f=>l.calc(f));
+            const validos=valores.filter(v=>v!==null);
+            const melhor=validos.length?(l.best==='max'?Math.max(...validos):Math.min(...validos)):null;
+            return `<tr>
+              <td>${l.label}</td>
+              ${valores.map(v=>`<td${v!==null&&v===melhor?' class="compare-best"':''}>${l.fmt(v)}${v!==null&&v===melhor&&validos.length>1?' ✓':''}</td>`).join('')}
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+    <p style="font-size:11px;color:var(--muted);">✓ indica o melhor valor entre os fornecedores para aquela métrica. Custo médio considera o custo de envio (quando informado) somado ao custo de conserto — retornos de recapagem não têm custo. Taxa de sucata considera apenas reformas com retorno registrado.</p>
+  `;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ─── ALERTAS DE RETORNO VENCIDO ────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
+const DIAS_ALERTA = 7;
+let previsaoPneuId=null, previsaoRefIdx=null;
+
+function diasEmReforma(r){
+  if(!r.dataEnvio||r.retorno?.data) return 0;
+  const diff=new Date()-new Date(r.dataEnvio);
+  return Math.floor(diff/86400000);
+}
+
+function getVencidos(){
+  const venc=[];
+  pneus.forEach(p=>{
+    (p.reformas||[]).forEach((r,i)=>{
+      const dias=diasEmReforma(r);
+      if(dias>=DIAS_ALERTA) venc.push({p,r,i,dias});
+    });
+  });
+  return venc.sort((a,b)=>b.dias-a.dias);
+}
+
+function updateAlertaBadge(){
+  const n=getVencidos().length;
+  const badge=document.getElementById('nav-alerta-badge');
+  const banner=document.getElementById('dash-alerta-banner');
+  if(badge){badge.textContent=n;badge.style.display=n?'':'none';}
+  if(banner){
+    banner.style.display=n?'':'none';
+    const el=document.getElementById('dash-alerta-count');
+    if(el) el.textContent=n;
+  }
+}
+
+function renderAlertas(){
+  const venc=getVencidos();
+  const el=document.getElementById('alertas-content');
+  if(!venc.length){
+    el.innerHTML=`<div class="empty-state"><div class="empty-icon">✅</div><div class="empty-title">Nenhum atraso!</div><div>Todos os pneus em reforma estão dentro do prazo de ${DIAS_ALERTA} dias.</div></div>`;
+    return;
+  }
+  el.innerHTML=`
+    <div style="margin-bottom:16px;font-size:13px;color:var(--muted);">${venc.length} pneu(s) com retorno atrasado há mais de ${DIAS_ALERTA} dias.</div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Fogo</th><th>Fornecedor</th><th>Tipo</th><th>Enviado em</th><th>Dias em Aberto</th><th>Previsão</th><th>Ações</th></tr></thead>
+      <tbody>
+      ${venc.map(({p,r,i,dias})=>{
+        const venc_class=dias>=14?'badge-red':'badge-orange';
+        const prev=r.previsaoRetorno;
+        const prevVencida=prev&&prev<today();
+        return`<tr>
+          <td><span class="tag-fogo">🛞 ${p.fogo}</span></td>
+          <td>${r.fornecedor||'—'}</td>
+          <td>${r.tipoEnvio||'—'}</td>
+          <td>${fmtDate(r.dataEnvio)}</td>
+          <td><span class="badge ${venc_class}">⚠️ ${dias} dias</span></td>
+          <td>${prev?`<span class="previsao-badge${prevVencida?' previsao-vencida':''}">📅 ${fmtDate(prev)}${prevVencida?' ⚠️':''}</span>`:'<span style="color:var(--muted);font-size:12px">—</span>'}</td>
+          <td><div class="actions">
+            <button class="btn btn-ghost btn-sm" onclick="openPrevisao('${p.id}',${i})">📅 Previsão</button>
+            <button class="btn btn-retorno btn-sm" onclick="openRetorno('${p.id}',${i})">↩ Retorno</button>
+          </div></td>
+        </tr>`;
+      }).join('')}
+      </tbody>
+    </table></div>`;
+}
+
+function openPrevisao(pneuId,refIdx){
+  previsaoPneuId=pneuId; previsaoRefIdx=refIdx;
+  const p=pneus.find(x=>x.id===pneuId);
+  const r=p.reformas[refIdx];
+  document.getElementById('previsao-info').textContent=`Pneu Fogo ${p.fogo} · ${r.tipoEnvio||'Reforma'} → ${r.fornecedor||'Fornecedor'} · Enviado em ${fmtDate(r.dataEnvio)}`;
+  document.getElementById('prev-data').value=r.previsaoRetorno||'';
+  document.getElementById('prev-obs').value=r.previsaoObs||'';
+  openModal('modal-previsao');
+}
+function savePrevisao(){
+  const d=document.getElementById('prev-data').value;
+  if(!d){alert('Selecione a data prevista.');return;}
+  const p=pneus.find(x=>x.id===previsaoPneuId);
+  p.reformas[previsaoRefIdx].previsaoRetorno=d;
+  p.reformas[previsaoRefIdx].previsaoObs=document.getElementById('prev-obs').value;
+  save(); closeModal('modal-previsao'); renderAlertas(); renderDashboard();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ─── BUSCA GLOBAL ──────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
+function globalSearch(q,dropId='global-dropdown'){
+  const dd=document.getElementById(dropId);
+  if(!q||q.length<2){dd.classList.remove('open');return;}
+  const ql=q.toLowerCase();
+  const results=[];
+  // pneus
+  pneus.forEach(p=>{
+    const v=veiculos.find(x=>x.id===p.veiculoId);
+    const txt=[p.fogo,p.dot,p.marca,p.modelo,p.medida,v?.placa].join(' ').toLowerCase();
+    if(txt.includes(ql)) results.push({tipo:'pneu',p,v});
+  });
+  // veículos
+  veiculos.forEach(v=>{
+    const txt=[v.placa,v.descricao,v.frota,v.chassi].join(' ').toLowerCase();
+    if(txt.includes(ql)) results.push({tipo:'veiculo',v});
+  });
+
+  if(!results.length){dd.innerHTML='<div class="global-no-result">Nenhum resultado encontrado.</div>';dd.classList.add('open');return;}
+  dd.innerHTML=results.slice(0,10).map(r=>{
+    if(r.tipo==='pneu'){
+      return`<div class="global-result" onclick="closeGlobalSearch('${dropId}');showPneuDetail('${r.p.id}')">
+        <div class="global-result-icon">🛞</div>
+        <div><div class="global-result-main">Fogo ${r.p.fogo} · ${r.p.marca} ${r.p.modelo||''}</div>
+        <div class="global-result-sub">${r.v?'Ônibus '+r.v.placa+' · ':''} ${r.p.medida||''} · DOT ${r.p.dot||'—'}</div></div>
+        <div class="global-result-badge">${statusBadge(r.p)}</div>
+      </div>`;
+    } else {
+      const tires=pneus.filter(p=>p.veiculoId===r.v.id).length;
+      return`<div class="global-result" onclick="closeGlobalSearch('${dropId}');showPage('veiculos');setTimeout(()=>showVeiculoDetail('${r.v.id}'),100)">
+        <div class="global-result-icon">🚌</div>
+        <div><div class="global-result-main">${r.v.placa}</div>
+        <div class="global-result-sub">${r.v.descricao||''} · ${tires} pneu(s)</div></div>
+      </div>`;
+    }
+  }).join('');
+  dd.classList.add('open');
+}
+function closeGlobalSearch(dropId='global-dropdown'){
+  const dd=document.getElementById(dropId);
+  if(dd) dd.classList.remove('open');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ─── BATCH ENVIO / RETORNO ─────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
+let batchMode='envio';
+let batchSelected=new Set();
+
+function openBatchModal(mode){
+  batchMode=mode; batchSelected=new Set();
+  document.getElementById('batch-title').textContent=mode==='envio'?'📦 Envio em Lote':'📥 Retorno em Lote';
+  document.getElementById('batch-confirm-btn').textContent=mode==='envio'?'Confirmar Envios':'Confirmar Retornos';
+  document.getElementById('batch-search').value='';
+
+  // Campos comuns
+  const comuns=document.getElementById('batch-campos-comuns');
+  if(mode==='envio'){
+    comuns.innerHTML=`<div class="form-grid">
+      <div class="form-group"><label>Tipo de Envio *</label><select id="batch-tipo"><option value="">Selecione...</option><option>Recapar</option><option>Consertar Externo</option></select></div>
+      <div class="form-group"><label>Fornecedor *</label><select id="batch-fornecedor"><option value="">Selecione...</option>${FORNECEDORES.map(f=>`<option>${f}</option>`).join('')}</select></div>
+      <div class="form-group"><label>Data do Envio</label><input type="date" id="batch-data" value="${today()}"></div>
+      <div class="form-group"><label>Responsável</label><input type="text" id="batch-resp" placeholder="Nome..."></div>
+    </div>`;
+  } else {
+    comuns.innerHTML=`<div class="form-grid">
+      <div class="form-group span-2"><label>Tipo de Reforma Enviada *</label>
+        <select id="batch-tipo-retorno" onchange="renderBatchList();updateBatchResultadoOptions();">
+          <option value="">Selecione...</option>
+          <option value="Recapar">Recapagem</option>
+          <option value="Consertar Externo">Conserto Externo</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Resultado *</label><select id="batch-resultado" onchange="updateBatchCustoVisibility()"><option value="">Selecione o tipo acima primeiro</option></select></div>
+      <div class="form-group"><label>Data de Retorno</label><input type="date" id="batch-data" value="${today()}"></div>
+      <div class="form-group span-2"><label>Responsável pelo recebimento</label><input type="text" id="batch-resp" placeholder="Nome..."></div>
+      <div class="form-group span-2" id="batch-custo-group" style="display:none;"><label>Custo da Reforma (R$) — aplicado a cada pneu selecionado</label><input type="number" step="0.01" min="0" id="batch-custo" placeholder="0,00"></div>
+      <div class="form-group span-2" style="font-size:11px;color:var(--muted);">Só é possível retornar em lote pneus enviados com o mesmo tipo. Recapagem sempre volta com 14mm e sem custo; conserto volta com o mesmo mm enviado.</div>
+    </div>`;
+  }
+
+  renderBatchList();
+  updateBatchCount();
+  openModal('modal-batch');
+}
+
+function renderBatchList(){
+  const q=(document.getElementById('batch-search').value||'').toLowerCase();
+  let pool = batchMode==='envio'
+    ? pneus.filter(p=>p.status==='Ativo'||p.status==='Em Reforma')
+    : pneus.filter(p=>p.status==='Em Reforma');
+
+  if(batchMode==='retorno'){
+    const tipoSel=document.getElementById('batch-tipo-retorno')?.value||'';
+    pool = pool.filter(p=>{
+      const idx=(p.reformas||[]).findLastIndex(r=>!r.retorno||!r.retorno.data);
+      if(idx===-1) return false;
+      const r=p.reformas[idx];
+      // ao selecionar checkboxes, evita manter selecionados pneus que não batem mais com o filtro
+      if(!tipoSel){ batchSelected.delete(p.id); return false; }
+      const match = r.tipoEnvio===tipoSel;
+      if(!match) batchSelected.delete(p.id);
+      return match;
+    });
+  }
+
+  const filtered=pool.filter(p=>{
+    const v=veiculos.find(x=>x.id===p.veiculoId);
+    return !q||[p.fogo,p.dot,p.marca,v?.placa].join(' ').toLowerCase().includes(q);
+  });
+
+  const list=document.getElementById('batch-list');
+  if(!filtered.length){list.innerHTML=`<div style="padding:20px;text-align:center;color:var(--muted);font-size:13px;">${batchMode==='retorno'&&!document.getElementById('batch-tipo-retorno')?.value?'Selecione o tipo de reforma para ver os pneus elegíveis.':'Nenhum pneu elegível.'}</div>`;updateBatchCount();return;}
+  list.innerHTML=`<table style="width:100%;border-collapse:collapse;">
+    <thead style="background:var(--dark);position:sticky;top:0;">
+      <tr><th style="padding:8px 12px;width:36px;"><input type="checkbox" id="batch-check-all" onchange="batchToggleAll(this.checked)"></th>
+      <th style="padding:8px 12px;font-size:11px;color:var(--muted);">Fogo</th>
+      <th style="padding:8px 12px;font-size:11px;color:var(--muted);">Marca</th>
+      <th style="padding:8px 12px;font-size:11px;color:var(--muted);">Ônibus</th>
+      <th style="padding:8px 12px;font-size:11px;color:var(--muted);">Status</th></tr>
+    </thead><tbody>
+    ${filtered.map(p=>{
+      const v=veiculos.find(x=>x.id===p.veiculoId);
+      return`<tr style="border-top:1px solid var(--border);">
+        <td style="padding:8px 12px;"><input type="checkbox" ${batchSelected.has(p.id)?'checked':''} onchange="batchToggle('${p.id}',this.checked)"></td>
+        <td style="padding:8px 12px;font-size:13px;"><span class="tag-fogo">🛞 ${p.fogo}</span></td>
+        <td style="padding:8px 12px;font-size:12px;color:var(--light);">${p.marca} ${p.modelo||''}</td>
+        <td style="padding:8px 12px;font-size:12px;color:var(--muted);">${v?v.placa:'—'}</td>
+        <td style="padding:8px 12px;">${statusBadge(p)}</td>
+      </tr>`;
+    }).join('')}
+    </tbody></table>`;
+}
+
+function updateBatchResultadoOptions(){
+  const tipo=document.getElementById('batch-tipo-retorno')?.value||'';
+  const sel=document.getElementById('batch-resultado');
+  if(!sel) return;
+  if(!tipo){ sel.innerHTML='<option value="">Selecione o tipo acima primeiro</option>'; updateBatchCustoVisibility(); return; }
+  sel.innerHTML='<option value="">Selecione...</option>'+resultadoOptionsFor(tipo).map(op=>`<option>${op}</option>`).join('');
+  updateBatchCustoVisibility();
+}
+function updateBatchCustoVisibility(){
+  const grupo=document.getElementById('batch-custo-group');
+  if(!grupo) return;
+  const resultado=document.getElementById('batch-resultado')?.value||'';
+  grupo.style.display = custoRetornoAplicavel(resultado) ? '' : 'none';
+  if(!custoRetornoAplicavel(resultado)){ const c=document.getElementById('batch-custo'); if(c) c.value=''; }
+}
+
+function batchToggle(id,checked){
+  if(checked) batchSelected.add(id); else batchSelected.delete(id);
+  updateBatchCount();
+}
+function batchToggleAll(checked){
+  const checkboxes=document.querySelectorAll('#batch-list tbody input[type="checkbox"]');
+  const rows=document.querySelectorAll('#batch-list tbody tr');
+  checkboxes.forEach((cb,i)=>{
+    cb.checked=checked;
+    const id=cb.getAttribute('onchange').match(/'([^']+)'/)?.[1];
+    if(id){if(checked)batchSelected.add(id);else batchSelected.delete(id);}
+  });
+  updateBatchCount();
+}
+function batchSelectAll(){document.getElementById('batch-check-all').checked=true;batchToggleAll(true);}
+function batchClearAll(){document.getElementById('batch-check-all').checked=false;batchToggleAll(false);}
+function updateBatchCount(){document.getElementById('batch-sel-count').textContent=`${batchSelected.size} pneu(s) selecionado(s)`;}
+
+function saveBatch(){
+  if(!batchSelected.size){alert('Selecione ao menos um pneu.');return;}
+  if(batchMode==='envio'){
+    const tipo=document.getElementById('batch-tipo').value;
+    const forn=document.getElementById('batch-fornecedor').value;
+    if(!tipo||!forn){alert('Preencha Tipo e Fornecedor.');return;}
+    const data=document.getElementById('batch-data').value||today();
+    const resp=document.getElementById('batch-resp').value;
+    batchSelected.forEach(id=>{
+      const p=pneus.find(x=>x.id===id);
+      if(!p) return;
+      if(!p.reformas) p.reformas=[];
+      p.reformas.push({tipoEnvio:tipo,fornecedor:forn,dataEnvio:data,responsavelEnvio:resp,custoEnvio:'',sulcoEnvio:'',retorno:null});
+      p.status='Em Reforma';
+    });
+  } else {
+    const tipoSel=document.getElementById('batch-tipo-retorno').value;
+    const resultado=document.getElementById('batch-resultado').value;
+    if(!tipoSel){alert('Selecione o tipo de reforma.');return;}
+    if(!resultado){alert('Selecione o resultado.');return;}
+    const data=document.getElementById('batch-data').value||today();
+    const resp=document.getElementById('batch-resp').value;
+    const custo=custoRetornoAplicavel(resultado) ? document.getElementById('batch-custo').value : '';
+    batchSelected.forEach(id=>{
+      const p=pneus.find(x=>x.id===id);
+      if(!p) return;
+      const idx=p.reformas.findLastIndex(r=>!r.retorno||!r.retorno.data);
+      if(idx===-1) return;
+      const r=p.reformas[idx];
+      if(r.tipoEnvio!==tipoSel) return; // segurança extra: não mistura tipos
+      r.retorno={resultado,data,responsavel:resp,custoRetorno:custo,sulcoRetorno:sulcoRetornoAuto(r,resultado),obs:''};
+      p.veiculoId=''; p.posicao=''; // pneu volta sempre sem veículo
+      if(resultado==='Irreparável (virou sucata)'){
+        p.status='Sucata';
+        p.sucata={motivo:'Recapagem inviável',data,obs:'Retornou irreparável (lote)'};
+      } else {
+        p.status='Ativo';
+      }
+    });
+  }
+  save(); closeModal('modal-batch'); renderPneus(); renderDashboard(); updateAlertaBadge();
+  alert(`${batchSelected.size} pneu(s) atualizados com sucesso!`);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ─── RELATÓRIO EXPORTÁVEL ──────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
+function openRelatorio(){
+  const fSel=document.getElementById('rel-fornecedor');
+  fSel.innerHTML='<option value="">Todos</option>';
+  FORNECEDORES.forEach(f=>fSel.innerHTML+=`<option>${f}</option>`);
+  const m=new Date().getMonth();
+  const y=new Date().getFullYear();
+  const pad=n=>String(n).padStart(2,'0');
+  document.getElementById('rel-de').value=`${y}-${pad(m+1)}-01`;
+  document.getElementById('rel-ate').value=today();
+  openModal('modal-relatorio');
+}
+
+function gerarRelatorio(){
+  const de=document.getElementById('rel-de').value;
+  const ate=document.getElementById('rel-ate').value;
+  const fStatus=document.getElementById('rel-status').value;
+  const fTipo=document.getElementById('rel-tipo').value;
+  const fForn=document.getElementById('rel-fornecedor').value;
+  const fmt=document.getElementById('rel-formato').value;
+
+  // Coleta todos os eventos no período
+  const rows=[];
+  pneus.forEach(p=>{
+    if(fStatus && p.status!==fStatus) return;
+    const v=veiculos.find(x=>x.id===p.veiculoId);
+
+    const addRow=(tipo,data,extra)=>{
+      if(de&&data<de) return;
+      if(ate&&data>ate) return;
+      if(fTipo&&tipo!==fTipo) return;
+      rows.push({fogo:p.fogo,marca:p.marca,modelo:p.modelo||'',medida:p.medida||'',status:p.status,veiculo:v?.placa||'—',tipo,data,...extra});
+    };
+
+    (p.reformas||[]).forEach((r,i)=>{
+      if(r.dataEnvio) addRow('envio',r.dataEnvio,{fornecedor:r.fornecedor||'—',tipoEnvio:r.tipoEnvio||'—',resultado:'',responsavel:r.responsavelEnvio||'—',custo:r.custoEnvio?fmtMoeda(r.custoEnvio):''});
+      if(r.retorno?.data) addRow('retorno',r.retorno.data,{fornecedor:r.fornecedor||'—',tipoEnvio:r.tipoEnvio||'—',resultado:r.retorno.resultado||'—',responsavel:r.retorno.responsavel||'—',custo:r.retorno.custoRetorno?fmtMoeda(r.retorno.custoRetorno):''});
+    });
+    if(p.sucata?.data) addRow('sucata',p.sucata.data,{fornecedor:'—',tipoEnvio:'—',resultado:p.sucata.motivo||'—',responsavel:'—',custo:''});
+  });
+
+  rows.sort((a,b)=>a.data.localeCompare(b.data));
+
+  if(fmt==='csv'){
+    const header=['Data','Tipo','Fogo','Marca','Modelo','Medida','Status','Ônibus','Fornecedor','Tipo Envio','Resultado','Responsável','Custo (R$)'];
+    const csvRows=rows.map(r=>[r.data,r.tipo,r.fogo,r.marca,r.modelo,r.medida,r.status,r.veiculo,r.fornecedor,r.tipoEnvio,r.resultado,r.responsavel,r.custo].map(v=>`"${v}"`).join(','));
+    const csv='\uFEFF'+[header.join(','),...csvRows].join('\n');
+    const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a'); a.href=url;
+    a.download=`relatorio_pneus_${de||'inicio'}_${ate||'fim'}.csv`;
+    a.click(); URL.revokeObjectURL(url);
+    closeModal('modal-relatorio');
+  } else {
+    // Impressão
+    const html=`<html><head><title>Relatório de Pneus</title>
+    <style>body{font-family:Arial,sans-serif;font-size:12px;padding:20px;}h2{margin-bottom:4px;}p{color:#666;margin-bottom:12px;}table{width:100%;border-collapse:collapse;}th,td{border:1px solid #ddd;padding:6px 8px;text-align:left;}th{background:#f5f5f5;font-size:11px;}</style></head>
+    <body><h2>Relatório de Pneus · GestãoPneus Rio Verde</h2>
+    <p>Período: ${de?fmtDate(de):'início'} até ${ate?fmtDate(ate):'hoje'} · ${rows.length} registro(s)</p>
+    <table><thead><tr><th>Data</th><th>Tipo</th><th>Fogo</th><th>Marca/Modelo</th><th>Medida</th><th>Ônibus</th><th>Fornecedor</th><th>Resultado</th><th>Responsável</th><th>Custo (R$)</th></tr></thead>
+    <tbody>${rows.map(r=>`<tr><td>${fmtDate(r.data)}</td><td>${r.tipo}</td><td>${r.fogo}</td><td>${r.marca} ${r.modelo}</td><td>${r.medida}</td><td>${r.veiculo}</td><td>${r.fornecedor}</td><td>${r.resultado}</td><td>${r.responsavel}</td><td>${r.custo}</td></tr>`).join('')}</tbody>
+    </table></body></html>`;
+    const w=window.open('','_blank');
+    w.document.write(html); w.document.close(); w.print();
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ─── GRÁFICO DE ENVIOS POR MÊS ─────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
+function renderGrafico(){
+  const yearSel=document.getElementById('dash-chart-year');
+  const anos=[...new Set(pneus.flatMap(p=>(p.reformas||[]).filter(r=>r.dataEnvio).map(r=>r.dataEnvio.slice(0,4))))].sort().reverse();
+  if(!anos.length){ document.getElementById('dash-chart').innerHTML='<p style="color:var(--muted);font-size:13px">Nenhum envio registrado.</p>'; return; }
+  const curYear=yearSel.value||anos[0];
+  yearSel.innerHTML=anos.map(a=>`<option${a===curYear?' selected':''}>${a}</option>`).join('');
+
+  const meses=Array(12).fill(0);
+  pneus.forEach(p=>(p.reformas||[]).forEach(r=>{
+    if(r.dataEnvio&&r.dataEnvio.startsWith(curYear)){
+      meses[parseInt(r.dataEnvio.slice(5,7))-1]++;
+    }
+  }));
+  const maxV=Math.max(...meses,1);
+  const nomMes=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+
+  document.getElementById('dash-chart').innerHTML=`
+    <div class="chart-bar-wrap">
+      ${meses.map((v,i)=>`
+        <div class="chart-bar-col">
+          <div class="chart-bar-val">${v||''}</div>
+          <div class="chart-bar" style="height:${Math.max(v/maxV*100,v>0?4:2)}px;background:${v>0?'var(--accent)':'var(--border)'};" title="${nomMes[i]}: ${v}"></div>
+          <div class="chart-bar-label">${nomMes[i]}</div>
+        </div>`).join('')}
+    </div>`;
+}
+
+function renderTempoMedio(){
+  const porForn={};
+  pneus.forEach(p=>(p.reformas||[]).forEach(r=>{
+    if(r.dataEnvio&&r.retorno?.data&&r.fornecedor){
+      const dias=Math.round((new Date(r.retorno.data)-new Date(r.dataEnvio))/86400000);
+      if(dias>=0){
+        if(!porForn[r.fornecedor]) porForn[r.fornecedor]={total:0,n:0};
+        porForn[r.fornecedor].total+=dias; porForn[r.fornecedor].n++;
+      }
+    }
+  }));
+  const el=document.getElementById('dash-tempo');
+  const entries=Object.entries(porForn);
+  if(!entries.length){el.innerHTML='<p style="color:var(--muted);font-size:13px">Dados insuficientes.</p>';return;}
+  el.innerHTML=entries.map(([f,{total,n}])=>{
+    const media=Math.round(total/n);
+    return`<div style="margin-bottom:12px;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px;font-size:12px;"><span>${f}</span><span style="color:var(--muted)">${media} dias (${n}x)</span></div>
+      <div style="background:var(--dark);border-radius:4px;height:6px;overflow:hidden"><div style="background:${media<=10?'var(--green)':media<=20?'var(--accent)':'var(--red)'};height:100%;width:${Math.min(media/30*100,100)}%;border-radius:4px"></div></div>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ─── HISTÓRICO DE POSIÇÃO na aba Histórico ──────────────────────
+// ═══════════════════════════════════════════════════════════════
+// Injetado já no buildTimeline acima; renderHistorico usa buildTimeline.
+
+// Qual página está visível agora (usado para saber o que re-renderizar quando dados chegam da nuvem)
+function paginaAtual(){
+  const paginas=['dashboard','pneus','veiculos','alertas','fornecedores'];
+  return paginas.find(id=>document.getElementById('page-'+id).style.display!=='none') || 'dashboard';
+}
+
+// Chamado 1x pelo script Firebase, assim que o login é confirmado e os dados iniciais chegam
+window.startApp = function(remotePneus, remoteVeiculos){
+  pneus = remotePneus;
+  veiculos = remoteVeiculos;
+  showPage('dashboard');
+  updateAlertaBadge();
+};
+
+// Chamado toda vez que ALGUÉM (você ou outra pessoa) muda algo e a nuvem avisa este navegador
+window.onRemoteUpdate = function(remotePneus, remoteVeiculos){
+  pneus = remotePneus;
+  veiculos = remoteVeiculos;
+  showPage(paginaAtual());
+  updateAlertaBadge();
+};
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SINCRONIZAÇÃO COM A NUVEM (Firebase) — login + tempo real
+     ═══════════════════════════════════════════════════════════════ -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {
+  getFirestore, doc, getDoc, setDoc, onSnapshot
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import {
+  getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBzRFHtyE8yzsav6AGI6cELVNMrNUN93pA",
+  authDomain: "gestaopneusrvd.firebaseapp.com",
+  projectId: "gestaopneusrvd",
+  storageBucket: "gestaopneusrvd.firebasestorage.app",
+  messagingSenderId: "40104636147",
+  appId: "1:40104636147:web:6dca3c87ac88a1e000d186"
+};
+
+const app  = initializeApp(firebaseConfig);
+const db   = getFirestore(app);
+const auth = getAuth(app);
+
+const pneusRef    = doc(db, 'gestaopneus', 'pneus');
+const veiculosRef = doc(db, 'gestaopneus', 'veiculos');
+
+let primeiraCarga = true;
+let recebeuPneus = false, recebeuVeiculos = false;
+let ultimoPneus = [], ultimoVeiculos = [];
+let ignorarProximoEcho = false; // evita re-render redundante logo após nosso próprio save()
+
+function tentaIniciar(){
+  if(primeiraCarga && recebeuPneus && recebeuVeiculos){
+    primeiraCarga = false;
+    window.startApp(ultimoPneus, ultimoVeiculos);
+  }
+}
+
+let unsubPneus = null, unsubVeiculos = null;
+
+async function iniciarSincronizacao(){
+  // Semeia a lista de veículos a partir da planilha embutida, apenas se ainda não existir nada na nuvem
+  const vSnap = await getDoc(veiculosRef);
+  if(!vSnap.exists() || !(vSnap.data().list||[]).length){
+    const seed = (window.VEICULOS_IMPORT_CSV||[]).map(v=>({id:uid(), ...v}));
+    await setDoc(veiculosRef, {list:seed});
+  }
+  const pSnap = await getDoc(pneusRef);
+  if(!pSnap.exists()){
+    await setDoc(pneusRef, {list:[]});
+  }
+
+  unsubPneus = onSnapshot(pneusRef, snap=>{
+    ultimoPneus = snap.exists() ? (snap.data().list||[]) : [];
+    recebeuPneus = true;
+    if(primeiraCarga) tentaIniciar();
+    else window.onRemoteUpdate(ultimoPneus, ultimoVeiculos);
+  });
+  unsubVeiculos = onSnapshot(veiculosRef, snap=>{
+    ultimoVeiculos = snap.exists() ? (snap.data().list||[]) : [];
+    recebeuVeiculos = true;
+    if(primeiraCarga) tentaIniciar();
+    else window.onRemoteUpdate(ultimoPneus, ultimoVeiculos);
+  });
+}
+
+function pararSincronizacao(){
+  if(unsubPneus) unsubPneus();
+  if(unsubVeiculos) unsubVeiculos();
+  unsubPneus = unsubVeiculos = null;
+  primeiraCarga = true;
+  recebeuPneus = recebeuVeiculos = false;
+}
+
+// Chamado pelo app (função save()) sempre que algo é criado/editado/excluído
+window.syncToFirestore = function(pneusAtuais, veiculosAtuais){
+  setDoc(pneusRef, {list:pneusAtuais}).catch(e=>console.error('Erro ao salvar pneus:', e));
+  setDoc(veiculosRef, {list:veiculosAtuais}).catch(e=>console.error('Erro ao salvar veículos:', e));
+};
+
+window.doLogin = async function(){
+  const email = document.getElementById('login-email').value.trim();
+  const senha = document.getElementById('login-password').value;
+  const erroEl = document.getElementById('login-error');
+  erroEl.style.display='none';
+  if(!email || !senha){
+    erroEl.textContent = 'Preencha e-mail e senha.';
+    erroEl.style.display='block';
+    return;
+  }
+  const btn = document.getElementById('login-btn');
+  btn.disabled = true; btn.textContent = 'Entrando...';
+  try{
+    await signInWithEmailAndPassword(auth, email, senha);
+  }catch(e){
+    erroEl.textContent = 'E-mail ou senha inválidos.';
+    erroEl.style.display='block';
+  }finally{
+    btn.disabled = false; btn.textContent = 'Entrar';
+  }
+};
+
+window.doLogout = async function(){
+  await signOut(auth);
+};
+
+onAuthStateChanged(auth, async (user)=>{
+  const loginOverlay = document.getElementById('login-overlay');
+  const appRoot = document.getElementById('app-root');
+  if(user){
+    loginOverlay.style.display='none';
+    appRoot.style.display='';
+    document.getElementById('user-email').textContent = user.email;
+    await iniciarSincronizacao();
+  }else{
+    pararSincronizacao();
+    loginOverlay.style.display='flex';
+    appRoot.style.display='none';
+    document.getElementById('login-email').value='';
+    document.getElementById('login-password').value='';
+  }
+});
+</script>
+</body>
+</html>
