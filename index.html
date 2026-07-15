@@ -285,10 +285,13 @@
     <div class="nav-item" onclick="showPage('veiculos')" id="nav-veiculos"><span>🚌</span> Ônibus</div>
     <div class="nav-item" onclick="showPage('fornecedores')" id="nav-fornecedores"><span>🏭</span> Fornecedores</div>
     <div class="nav-item" onclick="showPage('alertas')" id="nav-alertas"><span>🔴</span> Alertas <span id="nav-alerta-badge" style="margin-left:auto;background:var(--red);color:#fff;border-radius:10px;padding:1px 6px;font-size:10px;display:none;"></span></div>
+    <div class="nav-item" onclick="showPage('calibragem')" id="nav-calibragem"><span>🎚️</span> Calibragem <span id="nav-calib-badge" style="margin-left:auto;background:var(--red);color:#fff;border-radius:10px;padding:1px 6px;font-size:10px;display:none;"></span></div>
     <div class="nav-label" style="margin-top:8px;">Operações</div>
     <div class="nav-item" onclick="openBatchModal('envio')"><span>📦</span> Envio em Lote</div>
     <div class="nav-item" onclick="openBatchModal('retorno')"><span>📥</span> Retorno em Lote</div>
     <div class="nav-item" onclick="openRelatorio()"><span>📄</span> Relatório</div>
+    <div class="nav-label" style="margin-top:8px;">Sistema</div>
+    <div class="nav-item" onclick="showPage('log')" id="nav-log"><span>📜</span> Log do Sistema</div>
   </nav>
   <div class="sidebar-footer">
     <div id="sync-status" style="margin-bottom:6px;">v4.1 · Frota Rio Verde</div>
@@ -314,7 +317,7 @@
       <div class="stats-row" id="dash-stats"></div>
       <div id="dash-alerta-banner" style="display:none;" class="alert-vencido" onclick="showPage('alertas')">
         <div class="alert-vencido-count" id="dash-alerta-count">0</div>
-        <div><div class="alert-vencido-text">pneu(s) com retorno atrasado (+3 dias)</div><div class="alert-vencido-sub">Clique para ver e registrar nova previsão de entrega</div></div>
+        <div><div class="alert-vencido-text">pneu(s) com retorno atrasado (+7 dias)</div><div class="alert-vencido-sub">Clique para ver e registrar nova previsão de entrega</div></div>
         <span style="margin-left:auto;font-size:18px">→</span>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
@@ -445,6 +448,104 @@
         <div class="empty-icon">🚌</div>
         <div class="empty-title">Nenhum ônibus cadastrado</div>
         <div class="empty-sub">Adicione um ônibus para associar pneus.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CALIBRAGEM -->
+  <div id="page-calibragem" style="display:none;">
+    <div class="topbar">
+      <button class="mobile-menu-btn" onclick="toggleSidebar()">☰</button>
+      <div class="page-title">🎚️ Calibragem de Pneus</div>
+      <div class="topbar-actions">
+        <button class="btn btn-primary" onclick="openCalibragemModal()">＋ Nova Calibragem</button>
+      </div>
+    </div>
+    <div class="content">
+      <div class="stats-row" id="calib-stats" style="grid-template-columns:repeat(4,1fr);"></div>
+      <div id="calib-alerta-banner" style="display:none;" class="alert-vencido" onclick="document.getElementById('filter-calib-status').value='vencido';renderCalibragemPage();">
+        <div class="alert-vencido-count" id="calib-alerta-count">0</div>
+        <div><div class="alert-vencido-text">ônibus com calibragem vencida (14+ dias sem nova aferição)</div><div class="alert-vencido-sub">Clique para ver e registrar uma nova calibragem</div></div>
+        <span style="margin-left:auto;font-size:18px">→</span>
+      </div>
+      <div class="toolbar">
+        <div class="search-wrap">
+          <span class="search-icon">🔍</span>
+          <input type="text" class="search-input" placeholder="Buscar por placa ou frota..." id="search-calib" oninput="renderCalibragemPage()">
+        </div>
+        <select style="width:190px;" id="filter-calib-status" onchange="renderCalibragemPage()">
+          <option value="">Todos os status</option>
+          <option value="ok">Em dia</option>
+          <option value="atencao">Perto do prazo</option>
+          <option value="vencido">Vencido</option>
+          <option value="sem-registro">Sem registro</option>
+        </select>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Placa</th><th>Frota</th><th>Última Calibragem</th><th>Valor</th><th>Dias desde</th><th>Próximo prazo</th><th>Status</th><th>Ações</th>
+          </tr></thead>
+          <tbody id="calib-tbody"></tbody>
+        </table>
+        <div id="calib-empty" class="empty-state" style="display:none;">
+          <div class="empty-icon">🎚️</div>
+          <div class="empty-title">Nenhum ônibus encontrado</div>
+          <div class="empty-sub">Cadastre um ônibus para começar a controlar a calibragem.</div>
+        </div>
+      </div>
+
+      <div style="margin-top:24px;margin-bottom:10px;font-size:13px;font-weight:600;">📜 Histórico de Calibragens</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Data</th><th>Placa</th><th>Valor</th><th>Diferença</th><th>Justificativa</th><th>Registrado por</th><th>Ações</th></tr></thead>
+          <tbody id="calib-historico-tbody"></tbody>
+        </table>
+        <div id="calib-historico-empty" class="empty-state" style="display:none;">
+          <div class="empty-icon">📋</div>
+          <div class="empty-title">Nenhuma calibragem registrada ainda</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOG DO SISTEMA -->
+  <div id="page-log" style="display:none;">
+    <div class="topbar">
+      <button class="mobile-menu-btn" onclick="toggleSidebar()">☰</button>
+      <div class="page-title">📜 Log do Sistema</div>
+    </div>
+    <div class="content">
+      <div class="toolbar">
+        <div class="search-wrap">
+          <span class="search-icon">🔍</span>
+          <input type="text" class="search-input" placeholder="Buscar por usuário, ação, placa, fogo..." id="search-log" oninput="renderLogPage()">
+        </div>
+        <select style="width:190px;" id="filter-log-tipo" onchange="renderLogPage()">
+          <option value="">Todos os tipos</option>
+          <option value="acesso">Acesso (login/logout)</option>
+          <option value="pneu">Pneus</option>
+          <option value="veiculo">Ônibus</option>
+          <option value="reforma">Reforma / Retorno</option>
+          <option value="calibragem">Calibragem</option>
+          <option value="lote">Operações em Lote</option>
+        </select>
+      </div>
+      <div class="date-filter-bar">
+        <span class="date-filter-label">📅 Filtrar por dia:</span>
+        <input type="date" id="filter-log-data" style="width:170px;flex-shrink:0;" onchange="renderLogPage()">
+        <button class="date-filter-clear" onclick="clearLogDateFilter()" title="Limpar filtro de data">✕</button>
+        <span class="date-filter-result" id="log-filter-result" style="display:none;"></span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Data / Hora</th><th>Usuário</th><th>Tipo</th><th>Ação</th></tr></thead>
+          <tbody id="log-tbody"></tbody>
+        </table>
+        <div id="log-empty" class="empty-state" style="display:none;">
+          <div class="empty-icon">📜</div>
+          <div class="empty-title">Nenhum registro de log ainda</div>
+        </div>
       </div>
     </div>
   </div>
@@ -757,6 +858,42 @@
   </div>
 </div>
 
+<!-- ═══ MODAL CALIBRAGEM ═══ -->
+<div class="modal-overlay" id="modal-calibragem">
+  <div class="modal" style="width:480px;">
+    <div class="modal-header">
+      <div class="modal-title">🎚️ Nova Calibragem</div>
+      <button class="close-btn" onclick="closeModal('modal-calibragem')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group span-2">
+          <label>Ônibus *</label>
+          <select id="cal-veiculo" onchange="updateCalibDiffPreview()"></select>
+        </div>
+        <div class="form-group">
+          <label>Data da Calibragem *</label>
+          <input type="date" id="cal-data">
+        </div>
+        <div class="form-group">
+          <label>Valor (libras / PSI) *</label>
+          <input type="text" id="cal-valor" placeholder="Ex: 100" oninput="updateCalibDiffPreview()">
+        </div>
+        <div class="form-group span-2" id="cal-diff-info" style="display:none;"></div>
+        <div class="form-group span-2" id="cal-justificativa-group" style="display:none;">
+          <label>Justificativa (obrigatória — diferença acima de 20)</label>
+          <textarea id="cal-justificativa" rows="3" placeholder="Explique o motivo da diferença de calibragem..."></textarea>
+        </div>
+        <div class="form-group span-2"><label>Observação (opcional)</label><input type="text" id="cal-obs" placeholder="Ex: aferido antes da saída da garagem"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-calibragem')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveCalibragem()">Salvar Calibragem</button>
+    </div>
+  </div>
+</div>
+
 <!-- ═══ MODAL RELATÓRIO ═══ -->
 <div class="modal-overlay" id="modal-relatorio">
   <div class="modal" style="width:580px;">
@@ -894,8 +1031,10 @@ const VEICULOS_IMPORT_CSV = [
 
 // Os dados de pneus e veículos agora vivem no Firestore (nuvem), não mais no localStorage.
 // Eles chegam através de window.startApp() / window.onRemoteUpdate() (ver o script Firebase no final do arquivo).
-let pneus    = [];
-let veiculos = [];
+let pneus       = [];
+let veiculos    = [];
+let calibragens = []; // calibragens de pneus dos ônibus (a cada 14 dias)
+let logs        = []; // log de auditoria: absolutamente tudo que acontece no site
 window.VEICULOS_IMPORT_CSV = VEICULOS_IMPORT_CSV; // exposto para o script de sincronização usar na 1ª carga
 
 let editingPneuId     = null;
@@ -906,8 +1045,34 @@ let retornoPneuId     = null;
 let retormaIdx        = null;
 let sucataQuickId     = null;
 
+// ─── CALIBRAGEM: CONSTANTES ────────────────────────────────────
+const PRAZO_CALIBRAGEM_DIAS   = 14; // a calibragem deve ser refeita a cada 14 dias
+const DIFF_CALIBRAGEM_LIMITE  = 20; // diferença acima disso exige justificativa
+const MAX_LOG_REGISTROS       = 3000; // limite de registros mantidos no log (evita doc gigante no Firestore)
+
 function save(){
   if(window.syncToFirestore) window.syncToFirestore(pneus, veiculos);
+}
+
+// ─── LOG DO SISTEMA ─────────────────────────────────────────────
+// Registra absolutamente toda ação relevante: quem fez, o quê, quando.
+function logEvent(tipo, acao, detalhes){
+  logs.push({
+    id: uid(),
+    ts: new Date().toISOString(),
+    usuario: window.currentUserEmail || 'desconhecido',
+    tipo,
+    acao,
+    detalhes: detalhes||'',
+  });
+  if(logs.length > MAX_LOG_REGISTROS) logs = logs.slice(logs.length - MAX_LOG_REGISTROS);
+  if(window.syncLogsToFirestore) window.syncLogsToFirestore(logs);
+  if(document.getElementById('page-log') && document.getElementById('page-log').style.display!=='none') renderLogPage();
+}
+function fmtDataHora(iso){
+  if(!iso) return '—';
+  const d = new Date(iso);
+  return d.toLocaleDateString('pt-BR')+' '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
 }
 function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2); }
 function fmtDate(s){ if(!s)return'—'; const[y,m,d]=s.split('-'); return`${d}/${m}/${y}`; }
@@ -984,7 +1149,7 @@ function statusBadge(p){
 
 // ─── NAVEGAÇÃO ────────────────────────────────────────────────
 function showPage(p){
-  ['dashboard','pneus','veiculos','alertas','fornecedores'].forEach(id=>{
+  ['dashboard','pneus','veiculos','alertas','fornecedores','calibragem','log'].forEach(id=>{
     document.getElementById('page-'+id).style.display = id===p?'':'none';
     const nav=document.getElementById('nav-'+id);
     if(nav) nav.classList.toggle('active',id===p);
@@ -994,6 +1159,8 @@ function showPage(p){
   if(p==='veiculos')     renderVeiculos();
   if(p==='alertas')      renderAlertas();
   if(p==='fornecedores') renderFornecedores();
+  if(p==='calibragem')   renderCalibragemPage();
+  if(p==='log')          renderLogPage();
   toggleSidebar(false);
 }
 function openModal(id){ document.getElementById(id).classList.add('open'); }
@@ -1431,6 +1598,7 @@ function savePneu(){
     medicoes: tempMedicoes,
   };
 
+  let acaoLog = '';
   if(editingPneuId){
     const i=pneus.findIndex(x=>x.id===editingPneuId);
     const antigo=pneus[i];
@@ -1442,6 +1610,7 @@ function savePneu(){
       posHist.push({data:today(),de:antigoPos,para:novaPos});
     }
     pneus[i]={...antigo,...data,posicaoHistorico:posHist};
+    acaoLog = `Editou o pneu Fogo ${fogo}`;
   } else {
     const posHist=[];
     if(data.veiculoId){
@@ -1449,8 +1618,10 @@ function savePneu(){
       posHist.push({data:data.dataCadastro||today(),de:'—',para:`${vn?.placa||'?'}${data.posicao?' · '+data.posicao:''}`});
     }
     pneus.push({id:uid(),...data,posicaoHistorico:posHist});
+    acaoLog = `Cadastrou o pneu Fogo ${fogo}`;
   }
   save(); closeModal('modal-pneu'); renderPneus(); renderDashboard(); updateAlertaBadge();
+  logEvent('pneu', acaoLog, `Marca: ${marca} · Status: ${status}`);
 }
 
 // ─── RETORNO RÁPIDO (botão na tabela) ────────────────────────
@@ -1520,6 +1691,7 @@ function saveRetorno(){
     if(p.status==='Em Reforma') p.status='Ativo';
   }
   save(); closeModal('modal-retorno'); renderPneus(); renderDashboard(); updateAlertaBadge();
+  logEvent('reforma', `Registrou retorno de reforma do pneu Fogo ${p.fogo}`, `Resultado: ${resultado} · Fornecedor: ${r.fornecedor||'—'}`);
 }
 
 // ─── SUCATA RÁPIDO (botão na tabela) ─────────────────────────
@@ -1546,6 +1718,7 @@ function saveSucata(){
   // desvincular do ônibus
   p.veiculoId=''; p.posicao='';
   save(); closeModal('modal-sucata'); renderPneus(); renderDashboard();
+  logEvent('pneu', `Deu baixa (sucata) no pneu Fogo ${p.fogo}`, `Motivo: ${motivo}`);
 }
 
 // ─── VEÍCULO ─────────────────────────────────────────────────
@@ -1564,9 +1737,11 @@ function saveVeiculo(){
   const placa=document.getElementById('vf-placa').value.trim().toUpperCase();
   if(!placa){alert('Informe a Placa.');return;}
   const data={placa,frota:document.getElementById('vf-frota').value.trim(),descricao:document.getElementById('vf-desc').value.trim(),ano:document.getElementById('vf-ano').value.trim(),chassi:document.getElementById('vf-chassi').value.trim()};
+  const editando = !!editingVeiculoId;
   if(editingVeiculoId){const i=veiculos.findIndex(x=>x.id===editingVeiculoId);veiculos[i]={...veiculos[i],...data};}
   else veiculos.push({id:uid(),...data});
   save(); closeModal('modal-veiculo'); renderVeiculos(); renderDashboard();
+  logEvent('veiculo', editando?`Editou o ônibus ${placa}`:`Cadastrou o ônibus ${placa}`, '');
 }
 
 // ─── DELETE ───────────────────────────────────────────────────
@@ -1577,7 +1752,10 @@ function confirmDelete(msg,fn){
 }
 function deletePneu(id){
   const p=pneus.find(x=>x.id===id);
-  confirmDelete(`Excluir pneu Fogo ${p.fogo}?`,()=>{pneus=pneus.filter(x=>x.id!==id);save();renderPneus();renderDashboard();});
+  confirmDelete(`Excluir pneu Fogo ${p.fogo}?`,()=>{
+    pneus=pneus.filter(x=>x.id!==id);save();renderPneus();renderDashboard();
+    logEvent('pneu', `Excluiu o pneu Fogo ${p.fogo}`, '');
+  });
 }
 function deleteVeiculo(id){
   const v=veiculos.find(x=>x.id===id);
@@ -1585,6 +1763,7 @@ function deleteVeiculo(id){
     pneus=pneus.map(p=>p.veiculoId===id?{...p,veiculoId:'',posicao:''}:p);
     veiculos=veiculos.filter(x=>x.id!==id);
     save();renderVeiculos();renderDashboard();
+    logEvent('veiculo', `Excluiu o ônibus ${v.placa}`, '');
   });
 }
 
@@ -1751,6 +1930,7 @@ function renderVeiculos(){
           <div class="vehicle-name">${[v.frota,v.descricao].filter(Boolean).join(' · ')}</div>
         </div>
         <div style="display:flex;gap:4px">
+          <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openCalibragemModal('${v.id}')" title="Nova calibragem">🎚️</button>
           <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();openVeiculoModal('${v.id}')">✏️</button>
           <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteVeiculo('${v.id}')">🗑</button>
         </div>
@@ -1880,7 +2060,7 @@ function renderFornecedores(){
 // ═══════════════════════════════════════════════════════════════
 // ─── ALERTAS DE RETORNO VENCIDO ────────────────────────────────
 // ═══════════════════════════════════════════════════════════════
-const DIAS_ALERTA = 3;
+const DIAS_ALERTA = 7;
 let previsaoPneuId=null, previsaoRefIdx=null;
 
 function diasEmReforma(r){
@@ -1961,6 +2141,255 @@ function savePrevisao(){
   p.reformas[previsaoRefIdx].previsaoRetorno=d;
   p.reformas[previsaoRefIdx].previsaoObs=document.getElementById('prev-obs').value;
   save(); closeModal('modal-previsao'); renderAlertas(); renderDashboard();
+  logEvent('reforma', `Registrou previsão de retorno para o pneu Fogo ${p.fogo}`, `Previsão: ${fmtDate(d)}`);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ─── CALIBRAGEM DE PNEUS (a cada 14 dias) ───────────────────────
+// ═══════════════════════════════════════════════════════════════
+function saveCalibragens(){
+  if(window.syncCalibragensToFirestore) window.syncCalibragensToFirestore(calibragens);
+}
+// Todas as calibragens de um veículo, ordenadas da mais antiga para a mais recente
+function calibragensDoVeiculo(veiculoId){
+  return calibragens
+    .filter(c=>c.veiculoId===veiculoId)
+    .sort((a,b)=> (a.data+a.criadoEm).localeCompare(b.data+b.criadoEm));
+}
+function ultimaCalibragem(veiculoId){
+  const lista = calibragensDoVeiculo(veiculoId);
+  return lista.length ? lista[lista.length-1] : null;
+}
+function diasDesde(dataStr){
+  return Math.floor((new Date(today())-new Date(dataStr))/86400000);
+}
+// Status do prazo de calibragem de um veículo
+function statusCalibragemVeiculo(veiculoId){
+  const ultima = ultimaCalibragem(veiculoId);
+  if(!ultima) return {status:'sem-registro', dias:null, ultima:null};
+  const dias = diasDesde(ultima.data);
+  let status='ok';
+  if(dias >= PRAZO_CALIBRAGEM_DIAS) status='vencido';
+  else if(dias >= PRAZO_CALIBRAGEM_DIAS-3) status='atencao';
+  return {status, dias, ultima};
+}
+function calibStatusBadge(info){
+  if(info.status==='sem-registro') return '<span class="badge badge-gray">Sem registro</span>';
+  if(info.status==='vencido')      return `<span class="badge badge-red">⚠️ Vencido (${info.dias}d)</span>`;
+  if(info.status==='atencao')      return `<span class="badge badge-yellow">⏳ ${info.dias}d — perto do prazo</span>`;
+  return `<span class="badge badge-green">✅ Em dia (${info.dias}d)</span>`;
+}
+
+function getVeiculosVencidosCalibragem(){
+  return veiculos.filter(v=>statusCalibragemVeiculo(v.id).status==='vencido');
+}
+function updateCalibAlertaBadge(){
+  const n=getVeiculosVencidosCalibragem().length;
+  const badge=document.getElementById('nav-calib-badge');
+  const banner=document.getElementById('calib-alerta-banner');
+  if(badge){badge.textContent=n;badge.style.display=n?'':'none';}
+  if(banner){
+    banner.style.display=n?'':'none';
+    const el=document.getElementById('calib-alerta-count');
+    if(el) el.textContent=n;
+  }
+}
+
+let calibVeiculoPreselecionado = null;
+function openCalibragemModal(veiculoId){
+  calibVeiculoPreselecionado = veiculoId||null;
+  const sel = document.getElementById('cal-veiculo');
+  sel.innerHTML = veiculos
+    .slice().sort((a,b)=>a.placa.localeCompare(b.placa))
+    .map(v=>`<option value="${v.id}">${v.placa}${v.frota?' · '+v.frota:''}</option>`).join('');
+  if(veiculoId) sel.value = veiculoId;
+  document.getElementById('cal-data').value = today();
+  document.getElementById('cal-valor').value = '';
+  document.getElementById('cal-obs').value = '';
+  document.getElementById('cal-justificativa').value = '';
+  document.getElementById('cal-justificativa-group').style.display = 'none';
+  document.getElementById('cal-diff-info').style.display = 'none';
+  updateCalibDiffPreview();
+  openModal('modal-calibragem');
+}
+function updateCalibDiffPreview(){
+  const veiculoId = document.getElementById('cal-veiculo').value;
+  const valorStr   = document.getElementById('cal-valor').value;
+  const infoEl = document.getElementById('cal-diff-info');
+  const justGroup = document.getElementById('cal-justificativa-group');
+  if(!veiculoId || valorStr===''){ infoEl.style.display='none'; justGroup.style.display='none'; return; }
+  const valor = parseFloat(valorStr.replace(',','.'));
+  const ultima = ultimaCalibragem(veiculoId);
+  if(!ultima || isNaN(valor)){
+    infoEl.style.display = ultima ? '' : 'none';
+    if(!isNaN(valor) && ultima){
+      infoEl.innerHTML = `<div style="font-size:12px;color:var(--muted)">Última calibragem: ${fmtDate(ultima.data)} · valor ${ultima.valor}</div>`;
+    }
+    justGroup.style.display='none';
+    return;
+  }
+  const diff = +(valor - parseFloat(ultima.valor)).toFixed(2);
+  const grande = Math.abs(diff) > DIFF_CALIBRAGEM_LIMITE;
+  infoEl.style.display='';
+  infoEl.innerHTML = `<div style="font-size:12px;padding:8px 10px;border-radius:6px;background:${grande?'rgba(224,85,85,.1)':'rgba(76,175,125,.1)'};color:${grande?'var(--red)':'var(--green)'};border:1px solid ${grande?'rgba(224,85,85,.3)':'rgba(76,175,125,.3)'}">
+    Última calibragem: ${fmtDate(ultima.data)} · valor ${ultima.valor}<br>
+    Diferença: <b>${diff>0?'+':''}${diff}</b> ${grande?'— acima do limite de '+DIFF_CALIBRAGEM_LIMITE+', justificativa obrigatória':'dentro do esperado'}
+  </div>`;
+  justGroup.style.display = grande ? '' : 'none';
+}
+function saveCalibragem(){
+  const veiculoId = document.getElementById('cal-veiculo').value;
+  const data      = document.getElementById('cal-data').value || today();
+  const valorStr  = document.getElementById('cal-valor').value;
+  const obs       = document.getElementById('cal-obs').value.trim();
+  const just      = document.getElementById('cal-justificativa').value.trim();
+  if(!veiculoId){alert('Selecione o ônibus.');return;}
+  const valor = parseFloat(valorStr.replace(',','.'));
+  if(valorStr===''||isNaN(valor)){alert('Informe um valor de calibragem válido.');return;}
+  const v = veiculos.find(x=>x.id===veiculoId);
+  const ultima = ultimaCalibragem(veiculoId);
+  let diff = null;
+  if(ultima){
+    diff = +(valor - parseFloat(ultima.valor)).toFixed(2);
+    if(Math.abs(diff) > DIFF_CALIBRAGEM_LIMITE && !just){
+      alert(`A diferença em relação à última calibragem (${diff>0?'+':''}${diff}) é maior que ${DIFF_CALIBRAGEM_LIMITE}. É obrigatório informar uma justificativa.`);
+      return;
+    }
+  }
+  calibragens.push({
+    id: uid(),
+    veiculoId,
+    data,
+    valor,
+    diffAnterior: diff,
+    justificativa: just,
+    obs,
+    criadoEm: new Date().toISOString(),
+    criadoPor: window.currentUserEmail || 'desconhecido',
+  });
+  saveCalibragens();
+  closeModal('modal-calibragem');
+  renderCalibragemPage();
+  updateCalibAlertaBadge();
+  logEvent('calibragem', `Registrou calibragem do ônibus ${v?.placa||'?'}`, `Valor: ${valor}${diff!==null?` · Diferença: ${diff>0?'+':''}${diff}`:''}${just?` · Justificativa: ${just}`:''}`);
+}
+function deleteCalibragem(id){
+  const c = calibragens.find(x=>x.id===id);
+  if(!c) return;
+  const v = veiculos.find(x=>x.id===c.veiculoId);
+  confirmDelete(`Excluir o registro de calibragem de ${fmtDate(c.data)} (${v?.placa||'?'})?`,()=>{
+    calibragens = calibragens.filter(x=>x.id!==id);
+    saveCalibragens();
+    renderCalibragemPage();
+    updateCalibAlertaBadge();
+    logEvent('calibragem', `Excluiu registro de calibragem do ônibus ${v?.placa||'?'}`, `Data: ${fmtDate(c.data)} · Valor: ${c.valor}`);
+  });
+}
+
+function renderCalibragemPage(){
+  const q = (document.getElementById('search-calib').value||'').toLowerCase();
+  const fStatus = document.getElementById('filter-calib-status').value;
+
+  let emDia=0, atencao=0, vencido=0, semRegistro=0;
+  veiculos.forEach(v=>{
+    const s = statusCalibragemVeiculo(v.id).status;
+    if(s==='ok') emDia++; else if(s==='atencao') atencao++; else if(s==='vencido') vencido++; else semRegistro++;
+  });
+  document.getElementById('calib-stats').innerHTML = `
+    <div class="stat-card"><div class="stat-label">Em Dia</div><div class="stat-value" style="color:var(--green)">✅ ${emDia}</div><div class="stat-sub">dentro do prazo de ${PRAZO_CALIBRAGEM_DIAS} dias</div></div>
+    <div class="stat-card"><div class="stat-label">Perto do Prazo</div><div class="stat-value" style="color:var(--accent)">⏳ ${atencao}</div><div class="stat-sub">vencem em até 3 dias</div></div>
+    <div class="stat-card"><div class="stat-label">Vencidos</div><div class="stat-value" style="color:var(--red)">⚠️ ${vencido}</div><div class="stat-sub">precisam de nova calibragem</div></div>
+    <div class="stat-card"><div class="stat-label">Sem Registro</div><div class="stat-value" style="color:var(--muted)">— ${semRegistro}</div><div class="stat-sub">nunca calibrados</div></div>
+  `;
+  updateCalibAlertaBadge();
+
+  const filtrados = veiculos.filter(v=>{
+    if(q && ![v.placa,v.frota].join(' ').toLowerCase().includes(q)) return false;
+    if(fStatus && statusCalibragemVeiculo(v.id).status!==fStatus) return false;
+    return true;
+  }).sort((a,b)=>a.placa.localeCompare(b.placa));
+
+  const tbody = document.getElementById('calib-tbody');
+  const empty = document.getElementById('calib-empty');
+  if(!filtrados.length){ tbody.innerHTML=''; empty.style.display=''; }
+  else {
+    empty.style.display='none';
+    tbody.innerHTML = filtrados.map(v=>{
+      const info = statusCalibragemVeiculo(v.id);
+      const prox = info.ultima ? new Date(new Date(info.ultima.data).getTime()+PRAZO_CALIBRAGEM_DIAS*86400000).toISOString().slice(0,10) : null;
+      return `<tr>
+        <td><span class="vehicle-plate" style="font-size:14px">${v.placa}</span></td>
+        <td>${v.frota||'—'}</td>
+        <td>${info.ultima?fmtDate(info.ultima.data):'—'}</td>
+        <td>${info.ultima?info.ultima.valor:'—'}</td>
+        <td>${info.dias!==null?info.dias+' dia(s)':'—'}</td>
+        <td>${prox?fmtDate(prox):'—'}</td>
+        <td>${calibStatusBadge(info)}</td>
+        <td><div class="actions"><button class="btn btn-primary btn-sm" onclick="openCalibragemModal('${v.id}')">🎚️ Calibrar</button></div></td>
+      </tr>`;
+    }).join('');
+  }
+
+  const hist = calibragens.slice().sort((a,b)=> (b.data+b.criadoEm).localeCompare(a.data+a.criadoEm));
+  const htbody = document.getElementById('calib-historico-tbody');
+  const hempty = document.getElementById('calib-historico-empty');
+  if(!hist.length){ htbody.innerHTML=''; hempty.style.display=''; }
+  else {
+    hempty.style.display='none';
+    htbody.innerHTML = hist.map(c=>{
+      const v = veiculos.find(x=>x.id===c.veiculoId);
+      const diffGrande = c.diffAnterior!==null && Math.abs(c.diffAnterior)>DIFF_CALIBRAGEM_LIMITE;
+      return `<tr>
+        <td>${fmtDate(c.data)}</td>
+        <td>${v?.placa||'—'}</td>
+        <td>${c.valor}</td>
+        <td>${c.diffAnterior!==null?`<span class="badge ${diffGrande?'badge-red':'badge-green'}">${c.diffAnterior>0?'+':''}${c.diffAnterior}</span>`:'<span style="color:var(--muted)">—</span>'}</td>
+        <td style="max-width:220px;white-space:normal;">${c.justificativa||'<span style="color:var(--muted)">—</span>'}</td>
+        <td style="font-size:11px;color:var(--muted)">${c.criadoPor||'—'}</td>
+        <td><div class="actions"><button class="btn btn-danger btn-sm" onclick="deleteCalibragem('${c.id}')">🗑</button></div></td>
+      </tr>`;
+    }).join('');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ─── LOG DO SISTEMA ──────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
+function clearLogDateFilter(){
+  document.getElementById('filter-log-data').value='';
+  renderLogPage();
+}
+function renderLogPage(){
+  const q = (document.getElementById('search-log').value||'').toLowerCase();
+  const fTipo = document.getElementById('filter-log-tipo').value;
+  const fData = document.getElementById('filter-log-data').value;
+
+  let filtrados = logs.filter(l=>{
+    if(fTipo && l.tipo!==fTipo) return false;
+    if(fData && l.ts.slice(0,10)!==fData) return false;
+    if(q && ![l.usuario,l.tipo,l.acao,l.detalhes].join(' ').toLowerCase().includes(q)) return false;
+    return true;
+  }).sort((a,b)=>b.ts.localeCompare(a.ts));
+
+  const resEl = document.getElementById('log-filter-result');
+  if(fData){ resEl.style.display=''; resEl.textContent = `${filtrados.length} registro(s) em ${fmtDate(fData)}`; }
+  else resEl.style.display='none';
+
+  const tipoBadge = {
+    acesso:'badge-blue', pneu:'badge-yellow', veiculo:'badge-purple',
+    reforma:'badge-orange', calibragem:'badge-green', lote:'badge-gray',
+  };
+  const tbody = document.getElementById('log-tbody');
+  const empty = document.getElementById('log-empty');
+  if(!filtrados.length){ tbody.innerHTML=''; empty.style.display=''; return; }
+  empty.style.display='none';
+  tbody.innerHTML = filtrados.map(l=>`
+    <tr>
+      <td style="white-space:nowrap;font-size:12px;">${fmtDataHora(l.ts)}</td>
+      <td>${l.usuario}</td>
+      <td><span class="badge ${tipoBadge[l.tipo]||'badge-gray'}">${l.tipo}</span></td>
+      <td>${l.acao}${l.detalhes?`<div style="font-size:11px;color:var(--muted);margin-top:2px;">${l.detalhes}</div>`:''}</td>
+    </tr>`).join('');
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -2174,6 +2603,7 @@ function saveBatch(){
     });
   }
   save(); closeModal('modal-batch'); renderPneus(); renderDashboard(); updateAlertaBadge();
+  logEvent('lote', `Operação em lote: ${batchMode==='envio'?'envio para reforma':'retorno de reforma'}`, `${batchSelected.size} pneu(s) afetado(s)`);
   alert(`${batchSelected.size} pneu(s) atualizados com sucesso!`);
 }
 
@@ -2306,24 +2736,30 @@ function renderTempoMedio(){
 
 // Qual página está visível agora (usado para saber o que re-renderizar quando dados chegam da nuvem)
 function paginaAtual(){
-  const paginas=['dashboard','pneus','veiculos','alertas','fornecedores'];
+  const paginas=['dashboard','pneus','veiculos','alertas','fornecedores','calibragem','log'];
   return paginas.find(id=>document.getElementById('page-'+id).style.display!=='none') || 'dashboard';
 }
 
 // Chamado 1x pelo script Firebase, assim que o login é confirmado e os dados iniciais chegam
-window.startApp = function(remotePneus, remoteVeiculos){
+window.startApp = function(remotePneus, remoteVeiculos, remoteCalibragens, remoteLogs){
   pneus = remotePneus;
   veiculos = remoteVeiculos;
+  calibragens = remoteCalibragens||[];
+  logs = remoteLogs||[];
   showPage('dashboard');
   updateAlertaBadge();
+  updateCalibAlertaBadge();
 };
 
 // Chamado toda vez que ALGUÉM (você ou outra pessoa) muda algo e a nuvem avisa este navegador
-window.onRemoteUpdate = function(remotePneus, remoteVeiculos){
+window.onRemoteUpdate = function(remotePneus, remoteVeiculos, remoteCalibragens, remoteLogs){
   pneus = remotePneus;
   veiculos = remoteVeiculos;
+  if(remoteCalibragens!==undefined) calibragens = remoteCalibragens;
+  if(remoteLogs!==undefined) logs = remoteLogs;
   showPage(paginaAtual());
   updateAlertaBadge();
+  updateCalibAlertaBadge();
 };
 </script>
 
@@ -2352,22 +2788,23 @@ const app  = initializeApp(firebaseConfig);
 const db   = getFirestore(app);
 const auth = getAuth(app);
 
-const pneusRef    = doc(db, 'gestaopneus', 'pneus');
-const veiculosRef = doc(db, 'gestaopneus', 'veiculos');
+const pneusRef       = doc(db, 'gestaopneus', 'pneus');
+const veiculosRef    = doc(db, 'gestaopneus', 'veiculos');
+const calibragensRef = doc(db, 'gestaopneus', 'calibragens');
+const logsRef        = doc(db, 'gestaopneus', 'logs');
 
 let primeiraCarga = true;
-let recebeuPneus = false, recebeuVeiculos = false;
-let ultimoPneus = [], ultimoVeiculos = [];
-let ignorarProximoEcho = false; // evita re-render redundante logo após nosso próprio save()
+let recebeuPneus = false, recebeuVeiculos = false, recebeuCalibragens = false, recebeuLogs = false;
+let ultimoPneus = [], ultimoVeiculos = [], ultimoCalibragens = [], ultimoLogs = [];
 
 function tentaIniciar(){
-  if(primeiraCarga && recebeuPneus && recebeuVeiculos){
+  if(primeiraCarga && recebeuPneus && recebeuVeiculos && recebeuCalibragens && recebeuLogs){
     primeiraCarga = false;
-    window.startApp(ultimoPneus, ultimoVeiculos);
+    window.startApp(ultimoPneus, ultimoVeiculos, ultimoCalibragens, ultimoLogs);
   }
 }
 
-let unsubPneus = null, unsubVeiculos = null;
+let unsubPneus = null, unsubVeiculos = null, unsubCalibragens = null, unsubLogs = null;
 
 async function iniciarSincronizacao(){
   // Semeia a lista de veículos a partir da planilha embutida, apenas se ainda não existir nada na nuvem
@@ -2380,33 +2817,63 @@ async function iniciarSincronizacao(){
   if(!pSnap.exists()){
     await setDoc(pneusRef, {list:[]});
   }
+  const cSnap = await getDoc(calibragensRef);
+  if(!cSnap.exists()){
+    await setDoc(calibragensRef, {list:[]});
+  }
+  const lSnap = await getDoc(logsRef);
+  if(!lSnap.exists()){
+    await setDoc(logsRef, {list:[]});
+  }
 
   unsubPneus = onSnapshot(pneusRef, snap=>{
     ultimoPneus = snap.exists() ? (snap.data().list||[]) : [];
     recebeuPneus = true;
     if(primeiraCarga) tentaIniciar();
-    else window.onRemoteUpdate(ultimoPneus, ultimoVeiculos);
+    else window.onRemoteUpdate(ultimoPneus, ultimoVeiculos, ultimoCalibragens, ultimoLogs);
   });
   unsubVeiculos = onSnapshot(veiculosRef, snap=>{
     ultimoVeiculos = snap.exists() ? (snap.data().list||[]) : [];
     recebeuVeiculos = true;
     if(primeiraCarga) tentaIniciar();
-    else window.onRemoteUpdate(ultimoPneus, ultimoVeiculos);
+    else window.onRemoteUpdate(ultimoPneus, ultimoVeiculos, ultimoCalibragens, ultimoLogs);
+  });
+  unsubCalibragens = onSnapshot(calibragensRef, snap=>{
+    ultimoCalibragens = snap.exists() ? (snap.data().list||[]) : [];
+    recebeuCalibragens = true;
+    if(primeiraCarga) tentaIniciar();
+    else window.onRemoteUpdate(ultimoPneus, ultimoVeiculos, ultimoCalibragens, ultimoLogs);
+  });
+  unsubLogs = onSnapshot(logsRef, snap=>{
+    ultimoLogs = snap.exists() ? (snap.data().list||[]) : [];
+    recebeuLogs = true;
+    if(primeiraCarga) tentaIniciar();
+    else window.onRemoteUpdate(ultimoPneus, ultimoVeiculos, ultimoCalibragens, ultimoLogs);
   });
 }
 
 function pararSincronizacao(){
   if(unsubPneus) unsubPneus();
   if(unsubVeiculos) unsubVeiculos();
-  unsubPneus = unsubVeiculos = null;
+  if(unsubCalibragens) unsubCalibragens();
+  if(unsubLogs) unsubLogs();
+  unsubPneus = unsubVeiculos = unsubCalibragens = unsubLogs = null;
   primeiraCarga = true;
-  recebeuPneus = recebeuVeiculos = false;
+  recebeuPneus = recebeuVeiculos = recebeuCalibragens = recebeuLogs = false;
 }
 
-// Chamado pelo app (função save()) sempre que algo é criado/editado/excluído
+// Chamado pelo app (função save()) sempre que algo é criado/editado/excluído (pneus/veículos)
 window.syncToFirestore = function(pneusAtuais, veiculosAtuais){
   setDoc(pneusRef, {list:pneusAtuais}).catch(e=>console.error('Erro ao salvar pneus:', e));
   setDoc(veiculosRef, {list:veiculosAtuais}).catch(e=>console.error('Erro ao salvar veículos:', e));
+};
+// Chamado sempre que uma calibragem é adicionada/excluída
+window.syncCalibragensToFirestore = function(calibragensAtuais){
+  setDoc(calibragensRef, {list:calibragensAtuais}).catch(e=>console.error('Erro ao salvar calibragens:', e));
+};
+// Chamado toda vez que um evento é registrado no log (absolutamente tudo que acontece no site)
+window.syncLogsToFirestore = function(logsAtuais){
+  setDoc(logsRef, {list:logsAtuais}).catch(e=>console.error('Erro ao salvar log:', e));
 };
 
 window.doLogin = async function(){
@@ -2426,12 +2893,20 @@ window.doLogin = async function(){
   }catch(e){
     erroEl.textContent = 'E-mail ou senha inválidos.';
     erroEl.style.display='block';
+    // Registra tentativa de login mal sucedida (usuário ainda não autenticado, gravado localmente e
+    // enviado assim que houver uma sessão sincronizada; se nunca houver login válido, fica só neste navegador)
+    console.warn('Tentativa de login falhou para:', email);
   }finally{
     btn.disabled = false; btn.textContent = 'Entrar';
   }
 };
 
 window.doLogout = async function(){
+  // Captura o e-mail ANTES de encerrar a sessão, para registrar corretamente quem saiu
+  const emailSaindo = auth.currentUser ? auth.currentUser.email : (window.currentUserEmail||'desconhecido');
+  if(window.logEvent) window.logEvent('acesso', `Saiu do sistema (logout)`, `Usuário: ${emailSaindo}`);
+  // dá um instante para a gravação do log ser enviada ao Firestore antes de encerrar a sessão
+  await new Promise(r=>setTimeout(r,300));
   await signOut(auth);
 };
 
@@ -2442,7 +2917,9 @@ onAuthStateChanged(auth, async (user)=>{
     loginOverlay.style.display='none';
     appRoot.style.display='';
     document.getElementById('user-email').textContent = user.email;
+    window.currentUserEmail = user.email;
     await iniciarSincronizacao();
+    if(window.logEvent) window.logEvent('acesso', `Entrou no sistema (login)`, `Usuário: ${user.email}`);
   }else{
     pararSincronizacao();
     loginOverlay.style.display='flex';
