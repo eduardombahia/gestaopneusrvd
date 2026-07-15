@@ -2749,6 +2749,11 @@ window.startApp = function(remotePneus, remoteVeiculos, remoteCalibragens, remot
   showPage('dashboard');
   updateAlertaBadge();
   updateCalibAlertaBadge();
+  // Registra o login AGORA, depois que os logs da nuvem já foram carregados
+  if(window._pendingLoginLog){
+    logEvent('acesso', `Entrou no sistema (login)`, `Usuário: ${window._pendingLoginLog}`);
+    window._pendingLoginLog = null;
+  }
 };
 
 // Chamado toda vez que ALGUÉM (você ou outra pessoa) muda algo e a nuvem avisa este navegador
@@ -2918,8 +2923,9 @@ onAuthStateChanged(auth, async (user)=>{
     appRoot.style.display='';
     document.getElementById('user-email').textContent = user.email;
     window.currentUserEmail = user.email;
+    // Guarda o e-mail para usar no logEvent após os dados chegarem da nuvem
+    window._pendingLoginLog = user.email;
     await iniciarSincronizacao();
-    if(window.logEvent) window.logEvent('acesso', `Entrou no sistema (login)`, `Usuário: ${user.email}`);
   }else{
     pararSincronizacao();
     loginOverlay.style.display='flex';
