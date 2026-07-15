@@ -479,12 +479,13 @@
           <option value="atencao">Perto do prazo</option>
           <option value="vencido">Vencido</option>
           <option value="sem-registro">Sem registro</option>
+          <option value="sem-pneus">Sem pneus montados</option>
         </select>
       </div>
       <div class="table-wrap">
         <table>
           <thead><tr>
-            <th>Placa</th><th>Frota</th><th>Última Calibragem</th><th>Valor</th><th>Dias desde</th><th>Próximo prazo</th><th>Status</th><th>Ações</th>
+            <th>Placa</th><th>Frota</th><th>Pneus (calibragem)</th><th>Próximo prazo</th><th>Status</th><th>Ações</th>
           </tr></thead>
           <tbody id="calib-tbody"></tbody>
         </table>
@@ -498,7 +499,7 @@
       <div style="margin-top:24px;margin-bottom:10px;font-size:13px;font-weight:600;">📜 Histórico de Calibragens</div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Data</th><th>Placa</th><th>Valor</th><th>Diferença</th><th>Justificativa</th><th>Registrado por</th><th>Ações</th></tr></thead>
+          <thead><tr><th>Data</th><th>Placa</th><th>Pneu</th><th>Valor</th><th>Diferença</th><th>Justificativa</th><th>Registrado por</th><th>Ações</th></tr></thead>
           <tbody id="calib-historico-tbody"></tbody>
         </table>
         <div id="calib-historico-empty" class="empty-state" style="display:none;">
@@ -860,7 +861,7 @@
 
 <!-- ═══ MODAL CALIBRAGEM ═══ -->
 <div class="modal-overlay" id="modal-calibragem">
-  <div class="modal" style="width:480px;">
+  <div class="modal" style="width:560px;">
     <div class="modal-header">
       <div class="modal-title">🎚️ Nova Calibragem</div>
       <button class="close-btn" onclick="closeModal('modal-calibragem')">✕</button>
@@ -869,19 +870,25 @@
       <div class="form-grid">
         <div class="form-group span-2">
           <label>Ônibus *</label>
-          <select id="cal-veiculo" onchange="updateCalibDiffPreview()"></select>
+          <select id="cal-veiculo" onchange="renderCalibModalPneus()"></select>
         </div>
         <div class="form-group">
           <label>Data da Calibragem *</label>
           <input type="date" id="cal-data">
         </div>
-        <div class="form-group">
-          <label>Valor (libras / PSI) *</label>
-          <input type="text" id="cal-valor" placeholder="Ex: 100" oninput="updateCalibDiffPreview()">
+      </div>
+      <div style="display:flex;gap:8px;align-items:flex-end;margin-top:14px;margin-bottom:4px;">
+        <div class="form-group" style="flex:1;">
+          <label>Valor padrão para todos os pneus (opcional)</label>
+          <input type="text" id="cal-valor-padrao" placeholder="Ex: 100">
         </div>
-        <div class="form-group span-2" id="cal-diff-info" style="display:none;"></div>
+        <button class="btn btn-ghost btn-sm" onclick="aplicarValorPadraoATodos()">Aplicar a todos</button>
+      </div>
+      <p style="font-size:11px;color:var(--muted);margin:2px 0 12px;">Informe o valor de calibragem de cada pneu montado no ônibus. Pneus sem valor informado não terão registro criado.</p>
+      <div id="cal-pneus-lista"></div>
+      <div class="form-grid" style="margin-top:14px;">
         <div class="form-group span-2" id="cal-justificativa-group" style="display:none;">
-          <label>Justificativa (obrigatória — diferença acima de 20)</label>
+          <label>Justificativa (obrigatória — diferença acima de 20 em algum pneu)</label>
           <textarea id="cal-justificativa" rows="3" placeholder="Explique o motivo da diferença de calibragem..."></textarea>
         </div>
         <div class="form-group span-2"><label>Observação (opcional)</label><input type="text" id="cal-obs" placeholder="Ex: aferido antes da saída da garagem"></div>
@@ -2145,27 +2152,35 @@ function savePrevisao(){
 }
 
 // ═══════════════════════════════════════════════════════════════
-// ─── CALIBRAGEM DE PNEUS (a cada 14 dias) ───────────────────────
+// ─── CALIBRAGEM DE PNEUS (a cada 14 dias) — controle POR PNEU ───
 // ═══════════════════════════════════════════════════════════════
+const ORDEM_POSICOES = ['Dianteiro Esquerdo','Dianteiro Direito','Traseiro Esquerdo Interno','Traseiro Esquerdo Externo','Traseiro Direito Interno','Traseiro Direito Externo','Estepe'];
+const ABREV_POSICAO = {'Dianteiro Esquerdo':'DE','Dianteiro Direito':'DD','Traseiro Esquerdo Interno':'TEI','Traseiro Esquerdo Externo':'TEE','Traseiro Direito Interno':'TDI','Traseiro Direito Externo':'TDE','Estepe':'ST'};
+
 function saveCalibragens(){
   if(window.syncCalibragensToFirestore) window.syncCalibragensToFirestore(calibragens);
 }
-// Todas as calibragens de um veículo, ordenadas da mais antiga para a mais recente
-function calibragensDoVeiculo(veiculoId){
+// Pneus atualmente montados em um veículo (ordenados por posição)
+function pneusMontados(veiculoId){
+  return pneus.filter(p=>p.veiculoId===veiculoId)
+    .slice().sort((a,b)=> ORDEM_POSICOES.indexOf(a.posicao) - ORDEM_POSICOES.indexOf(b.posicao));
+}
+// Todas as calibragens de um pneu específico, ordenadas da mais antiga para a mais recente
+function calibragensDoPneu(pneuId){
   return calibragens
-    .filter(c=>c.veiculoId===veiculoId)
+    .filter(c=>c.pneuId===pneuId)
     .sort((a,b)=> (a.data+a.criadoEm).localeCompare(b.data+b.criadoEm));
 }
-function ultimaCalibragem(veiculoId){
-  const lista = calibragensDoVeiculo(veiculoId);
+function ultimaCalibragemPneu(pneuId){
+  const lista = calibragensDoPneu(pneuId);
   return lista.length ? lista[lista.length-1] : null;
 }
 function diasDesde(dataStr){
   return Math.floor((new Date(today())-new Date(dataStr))/86400000);
 }
-// Status do prazo de calibragem de um veículo
-function statusCalibragemVeiculo(veiculoId){
-  const ultima = ultimaCalibragem(veiculoId);
+// Status do prazo de calibragem de UM pneu
+function statusCalibragemPneu(pneuId){
+  const ultima = ultimaCalibragemPneu(pneuId);
   if(!ultima) return {status:'sem-registro', dias:null, ultima:null};
   const dias = diasDesde(ultima.data);
   let status='ok';
@@ -2173,11 +2188,33 @@ function statusCalibragemVeiculo(veiculoId){
   else if(dias >= PRAZO_CALIBRAGEM_DIAS-3) status='atencao';
   return {status, dias, ultima};
 }
+// Status agregado do veículo = pior status entre os pneus montados nele
+function statusCalibragemVeiculo(veiculoId){
+  const montados = pneusMontados(veiculoId);
+  if(!montados.length) return {status:'sem-pneus', dias:null, ultima:null, pneus:[]};
+  const ordemGravidade = {vencido:3, 'sem-registro':2, atencao:1, ok:0};
+  const infos = montados.map(p=>({pneuId:p.id, fogo:p.fogo, posicao:p.posicao, ...statusCalibragemPneu(p.id)}));
+  let pior = infos[0];
+  infos.forEach(info=>{ if(ordemGravidade[info.status] > ordemGravidade[pior.status]) pior = info; });
+  return {status:pior.status, dias:pior.dias, ultima:pior.ultima, pneus:infos};
+}
 function calibStatusBadge(info){
+  if(info.status==='sem-pneus')    return '<span class="badge badge-gray">Sem pneus montados</span>';
   if(info.status==='sem-registro') return '<span class="badge badge-gray">Sem registro</span>';
   if(info.status==='vencido')      return `<span class="badge badge-red">⚠️ Vencido (${info.dias}d)</span>`;
   if(info.status==='atencao')      return `<span class="badge badge-yellow">⏳ ${info.dias}d — perto do prazo</span>`;
   return `<span class="badge badge-green">✅ Em dia (${info.dias}d)</span>`;
+}
+// Chips com o status/valor de calibragem de cada pneu do veículo (usado na listagem)
+function renderVeiculoCalibChips(veiculoId){
+  const montados = pneusMontados(veiculoId);
+  if(!montados.length) return '<span style="color:var(--muted);font-size:12px">Nenhum pneu montado</span>';
+  return `<div style="display:flex;flex-wrap:wrap;gap:5px;">${montados.map(p=>{
+    const info = statusCalibragemPneu(p.id);
+    const cor = info.status==='vencido'?'var(--red)':info.status==='atencao'?'var(--accent)':info.status==='ok'?'var(--green)':'var(--muted)';
+    const val = info.ultima ? info.ultima.valor : '—';
+    return `<span class="tire-chip" title="Fogo ${p.fogo} · ${p.posicao||'Sem posição'}"><span class="tire-chip-dot" style="background:${cor}"></span>${ABREV_POSICAO[p.posicao]||'?'}: ${val}</span>`;
+  }).join('')}</div>`;
 }
 
 function getVeiculosVencidosCalibragem(){
@@ -2204,85 +2241,143 @@ function openCalibragemModal(veiculoId){
     .map(v=>`<option value="${v.id}">${v.placa}${v.frota?' · '+v.frota:''}</option>`).join('');
   if(veiculoId) sel.value = veiculoId;
   document.getElementById('cal-data').value = today();
-  document.getElementById('cal-valor').value = '';
+  document.getElementById('cal-valor-padrao').value = '';
   document.getElementById('cal-obs').value = '';
   document.getElementById('cal-justificativa').value = '';
   document.getElementById('cal-justificativa-group').style.display = 'none';
-  document.getElementById('cal-diff-info').style.display = 'none';
-  updateCalibDiffPreview();
+  renderCalibModalPneus();
   openModal('modal-calibragem');
 }
-function updateCalibDiffPreview(){
+// Monta, dentro do modal, um campo de valor por pneu montado no ônibus selecionado
+function renderCalibModalPneus(){
   const veiculoId = document.getElementById('cal-veiculo').value;
-  const valorStr   = document.getElementById('cal-valor').value;
-  const infoEl = document.getElementById('cal-diff-info');
-  const justGroup = document.getElementById('cal-justificativa-group');
-  if(!veiculoId || valorStr===''){ infoEl.style.display='none'; justGroup.style.display='none'; return; }
-  const valor = parseFloat(valorStr.replace(',','.'));
-  const ultima = ultimaCalibragem(veiculoId);
-  if(!ultima || isNaN(valor)){
-    infoEl.style.display = ultima ? '' : 'none';
-    if(!isNaN(valor) && ultima){
-      infoEl.innerHTML = `<div style="font-size:12px;color:var(--muted)">Última calibragem: ${fmtDate(ultima.data)} · valor ${ultima.valor}</div>`;
-    }
-    justGroup.style.display='none';
+  const lista = document.getElementById('cal-pneus-lista');
+  const montados = veiculoId ? pneusMontados(veiculoId) : [];
+  if(!veiculoId || !montados.length){
+    lista.innerHTML = `<p style="color:var(--muted);font-size:13px;">${veiculoId?'Nenhum pneu montado neste ônibus.':'Selecione um ônibus.'}</p>`;
+    document.getElementById('cal-justificativa-group').style.display='none';
+    return;
+  }
+  lista.innerHTML = montados.map(p=>{
+    const ultima = ultimaCalibragemPneu(p.id);
+    return `<div class="reforma-card" data-pneu-id="${p.id}">
+      <div class="reforma-header">
+        <div><span class="reforma-num" style="font-size:14px">🛞 Fogo ${p.fogo}</span><span class="reforma-tipo-label">${p.posicao||'Posição não definida'}</span></div>
+      </div>
+      <div class="form-group">
+        <label>Valor (libras / PSI) *</label>
+        <input type="text" class="cal-pneu-valor" id="cal-valor-${p.id}" placeholder="Ex: 100" oninput="updateCalibDiffPreview('${p.id}')">
+      </div>
+      <div id="cal-diff-${p.id}" style="display:none;margin-top:8px;"></div>
+      ${ultima?`<div style="font-size:11px;color:var(--muted);margin-top:6px;">Última calibragem: ${fmtDate(ultima.data)} · valor ${ultima.valor}</div>`:''}
+    </div>`;
+  }).join('');
+  document.getElementById('cal-justificativa-group').style.display='none';
+}
+function updateCalibDiffPreview(pneuId){
+  const input = document.getElementById('cal-valor-'+pneuId);
+  const diffEl = document.getElementById('cal-diff-'+pneuId);
+  if(!input || !diffEl){ atualizarJustificativaGlobal(); return; }
+  const valorStr = input.value;
+  const ultima = ultimaCalibragemPneu(pneuId);
+  const valor = parseFloat((valorStr||'').replace(',','.'));
+  if(valorStr===''||!ultima||isNaN(valor)){
+    diffEl.style.display='none';
+    atualizarJustificativaGlobal();
     return;
   }
   const diff = +(valor - parseFloat(ultima.valor)).toFixed(2);
   const grande = Math.abs(diff) > DIFF_CALIBRAGEM_LIMITE;
-  infoEl.style.display='';
-  infoEl.innerHTML = `<div style="font-size:12px;padding:8px 10px;border-radius:6px;background:${grande?'rgba(224,85,85,.1)':'rgba(76,175,125,.1)'};color:${grande?'var(--red)':'var(--green)'};border:1px solid ${grande?'rgba(224,85,85,.3)':'rgba(76,175,125,.3)'}">
-    Última calibragem: ${fmtDate(ultima.data)} · valor ${ultima.valor}<br>
-    Diferença: <b>${diff>0?'+':''}${diff}</b> ${grande?'— acima do limite de '+DIFF_CALIBRAGEM_LIMITE+', justificativa obrigatória':'dentro do esperado'}
+  diffEl.style.display='';
+  diffEl.innerHTML = `<div style="font-size:11px;padding:6px 8px;border-radius:6px;background:${grande?'rgba(224,85,85,.1)':'rgba(76,175,125,.1)'};color:${grande?'var(--red)':'var(--green)'};border:1px solid ${grande?'rgba(224,85,85,.3)':'rgba(76,175,125,.3)'}">
+    Diferença: <b>${diff>0?'+':''}${diff}</b> ${grande?'— acima do limite de '+DIFF_CALIBRAGEM_LIMITE:''}
   </div>`;
-  justGroup.style.display = grande ? '' : 'none';
+  atualizarJustificativaGlobal();
+}
+// Reavalia, entre todos os pneus do modal, se algum exige justificativa
+function atualizarJustificativaGlobal(){
+  const cards = document.querySelectorAll('#cal-pneus-lista [data-pneu-id]');
+  let algumGrande = false;
+  cards.forEach(card=>{
+    const pneuId = card.getAttribute('data-pneu-id');
+    const input = document.getElementById('cal-valor-'+pneuId);
+    const ultima = ultimaCalibragemPneu(pneuId);
+    if(input && input.value!=='' && ultima){
+      const valor = parseFloat(input.value.replace(',','.'));
+      if(!isNaN(valor) && Math.abs(valor - parseFloat(ultima.valor)) > DIFF_CALIBRAGEM_LIMITE) algumGrande = true;
+    }
+  });
+  const justGroup = document.getElementById('cal-justificativa-group');
+  if(justGroup) justGroup.style.display = algumGrande ? '' : 'none';
+}
+function aplicarValorPadraoATodos(){
+  const valor = document.getElementById('cal-valor-padrao').value;
+  if(valor==='') return;
+  document.querySelectorAll('#cal-pneus-lista .cal-pneu-valor').forEach(input=>{
+    input.value = valor;
+    updateCalibDiffPreview(input.id.replace('cal-valor-',''));
+  });
 }
 function saveCalibragem(){
   const veiculoId = document.getElementById('cal-veiculo').value;
   const data      = document.getElementById('cal-data').value || today();
-  const valorStr  = document.getElementById('cal-valor').value;
   const obs       = document.getElementById('cal-obs').value.trim();
   const just      = document.getElementById('cal-justificativa').value.trim();
   if(!veiculoId){alert('Selecione o ônibus.');return;}
-  const valor = parseFloat(valorStr.replace(',','.'));
-  if(valorStr===''||isNaN(valor)){alert('Informe um valor de calibragem válido.');return;}
   const v = veiculos.find(x=>x.id===veiculoId);
-  const ultima = ultimaCalibragem(veiculoId);
-  let diff = null;
-  if(ultima){
-    diff = +(valor - parseFloat(ultima.valor)).toFixed(2);
-    if(Math.abs(diff) > DIFF_CALIBRAGEM_LIMITE && !just){
-      alert(`A diferença em relação à última calibragem (${diff>0?'+':''}${diff}) é maior que ${DIFF_CALIBRAGEM_LIMITE}. É obrigatório informar uma justificativa.`);
-      return;
+  const montados = pneusMontados(veiculoId);
+  if(!montados.length){alert('Este ônibus não possui pneus montados.');return;}
+
+  const registros = [];
+  for(const p of montados){
+    const input = document.getElementById('cal-valor-'+p.id);
+    const valorStr = input ? input.value : '';
+    if(valorStr==='') continue;
+    const valor = parseFloat(valorStr.replace(',','.'));
+    if(isNaN(valor)){ alert(`Valor de calibragem inválido para o pneu Fogo ${p.fogo} (${p.posicao||'posição não definida'}).`); return; }
+    const ultima = ultimaCalibragemPneu(p.id);
+    let diff = null;
+    if(ultima){
+      diff = +(valor - parseFloat(ultima.valor)).toFixed(2);
+      if(Math.abs(diff) > DIFF_CALIBRAGEM_LIMITE && !just){
+        alert(`A diferença no pneu Fogo ${p.fogo} (${p.posicao||'posição não definida'}) em relação à última calibragem (${diff>0?'+':''}${diff}) é maior que ${DIFF_CALIBRAGEM_LIMITE}. É obrigatório informar uma justificativa.`);
+        return;
+      }
     }
+    registros.push({
+      id: uid(),
+      veiculoId,
+      pneuId: p.id,
+      fogo: p.fogo,
+      posicao: p.posicao||'',
+      data,
+      valor,
+      diffAnterior: diff,
+      justificativa: just,
+      obs,
+      criadoEm: new Date().toISOString(),
+      criadoPor: window.currentUserEmail || 'desconhecido',
+    });
   }
-  calibragens.push({
-    id: uid(),
-    veiculoId,
-    data,
-    valor,
-    diffAnterior: diff,
-    justificativa: just,
-    obs,
-    criadoEm: new Date().toISOString(),
-    criadoPor: window.currentUserEmail || 'desconhecido',
-  });
+  if(!registros.length){ alert('Informe o valor de calibragem de ao menos um pneu.'); return; }
+
+  calibragens.push(...registros);
   saveCalibragens();
   closeModal('modal-calibragem');
   renderCalibragemPage();
   updateCalibAlertaBadge();
-  logEvent('calibragem', `Registrou calibragem do ônibus ${v?.placa||'?'}`, `Valor: ${valor}${diff!==null?` · Diferença: ${diff>0?'+':''}${diff}`:''}${just?` · Justificativa: ${just}`:''}`);
+  logEvent('calibragem', `Registrou calibragem do ônibus ${v?.placa||'?'}`, `${registros.map(r=>`Fogo ${r.fogo} (${r.posicao||'—'}): ${r.valor}${r.diffAnterior!==null?` [${r.diffAnterior>0?'+':''}${r.diffAnterior}]`:''}`).join(' · ')}${just?` · Justificativa: ${just}`:''}`);
 }
 function deleteCalibragem(id){
   const c = calibragens.find(x=>x.id===id);
   if(!c) return;
   const v = veiculos.find(x=>x.id===c.veiculoId);
-  confirmDelete(`Excluir o registro de calibragem de ${fmtDate(c.data)} (${v?.placa||'?'})?`,()=>{
+  confirmDelete(`Excluir o registro de calibragem de ${fmtDate(c.data)} — ${v?.placa||'?'} · Fogo ${c.fogo||'?'} (${c.posicao||'posição não definida'})?`,()=>{
     calibragens = calibragens.filter(x=>x.id!==id);
     saveCalibragens();
     renderCalibragemPage();
     updateCalibAlertaBadge();
-    logEvent('calibragem', `Excluiu registro de calibragem do ônibus ${v?.placa||'?'}`, `Data: ${fmtDate(c.data)} · Valor: ${c.valor}`);
+    logEvent('calibragem', `Excluiu registro de calibragem do ônibus ${v?.placa||'?'}`, `Data: ${fmtDate(c.data)} · Pneu: Fogo ${c.fogo||'?'} (${c.posicao||'—'}) · Valor: ${c.valor}`);
   });
 }
 
@@ -2296,10 +2391,10 @@ function renderCalibragemPage(){
     if(s==='ok') emDia++; else if(s==='atencao') atencao++; else if(s==='vencido') vencido++; else semRegistro++;
   });
   document.getElementById('calib-stats').innerHTML = `
-    <div class="stat-card"><div class="stat-label">Em Dia</div><div class="stat-value" style="color:var(--green)">✅ ${emDia}</div><div class="stat-sub">dentro do prazo de ${PRAZO_CALIBRAGEM_DIAS} dias</div></div>
-    <div class="stat-card"><div class="stat-label">Perto do Prazo</div><div class="stat-value" style="color:var(--accent)">⏳ ${atencao}</div><div class="stat-sub">vencem em até 3 dias</div></div>
-    <div class="stat-card"><div class="stat-label">Vencidos</div><div class="stat-value" style="color:var(--red)">⚠️ ${vencido}</div><div class="stat-sub">precisam de nova calibragem</div></div>
-    <div class="stat-card"><div class="stat-label">Sem Registro</div><div class="stat-value" style="color:var(--muted)">— ${semRegistro}</div><div class="stat-sub">nunca calibrados</div></div>
+    <div class="stat-card"><div class="stat-label">Em Dia</div><div class="stat-value" style="color:var(--green)">✅ ${emDia}</div><div class="stat-sub">todos os pneus dentro do prazo de ${PRAZO_CALIBRAGEM_DIAS} dias</div></div>
+    <div class="stat-card"><div class="stat-label">Perto do Prazo</div><div class="stat-value" style="color:var(--accent)">⏳ ${atencao}</div><div class="stat-sub">algum pneu vence em até 3 dias</div></div>
+    <div class="stat-card"><div class="stat-label">Vencidos</div><div class="stat-value" style="color:var(--red)">⚠️ ${vencido}</div><div class="stat-sub">algum pneu precisa de nova calibragem</div></div>
+    <div class="stat-card"><div class="stat-label">Sem Registro</div><div class="stat-value" style="color:var(--muted)">— ${semRegistro}</div><div class="stat-sub">sem pneus montados ou nunca calibrados</div></div>
   `;
   updateCalibAlertaBadge();
 
@@ -2320,9 +2415,7 @@ function renderCalibragemPage(){
       return `<tr>
         <td><span class="vehicle-plate" style="font-size:14px">${v.placa}</span></td>
         <td>${v.frota||'—'}</td>
-        <td>${info.ultima?fmtDate(info.ultima.data):'—'}</td>
-        <td>${info.ultima?info.ultima.valor:'—'}</td>
-        <td>${info.dias!==null?info.dias+' dia(s)':'—'}</td>
+        <td>${renderVeiculoCalibChips(v.id)}</td>
         <td>${prox?fmtDate(prox):'—'}</td>
         <td>${calibStatusBadge(info)}</td>
         <td><div class="actions"><button class="btn btn-primary btn-sm" onclick="openCalibragemModal('${v.id}')">🎚️ Calibrar</button></div></td>
@@ -2342,6 +2435,7 @@ function renderCalibragemPage(){
       return `<tr>
         <td>${fmtDate(c.data)}</td>
         <td>${v?.placa||'—'}</td>
+        <td>${c.fogo?`Fogo ${c.fogo}`:'—'}${c.posicao?`<br><span style="font-size:10px;color:var(--muted)">${c.posicao}</span>`:''}</td>
         <td>${c.valor}</td>
         <td>${c.diffAnterior!==null?`<span class="badge ${diffGrande?'badge-red':'badge-green'}">${c.diffAnterior>0?'+':''}${c.diffAnterior}</span>`:'<span style="color:var(--muted)">—</span>'}</td>
         <td style="max-width:220px;white-space:normal;">${c.justificativa||'<span style="color:var(--muted)">—</span>'}</td>
@@ -2749,11 +2843,6 @@ window.startApp = function(remotePneus, remoteVeiculos, remoteCalibragens, remot
   showPage('dashboard');
   updateAlertaBadge();
   updateCalibAlertaBadge();
-  // Registra o login AGORA, depois que os logs da nuvem já foram carregados
-  if(window._pendingLoginLog){
-    logEvent('acesso', `Entrou no sistema (login)`, `Usuário: ${window._pendingLoginLog}`);
-    window._pendingLoginLog = null;
-  }
 };
 
 // Chamado toda vez que ALGUÉM (você ou outra pessoa) muda algo e a nuvem avisa este navegador
@@ -2923,9 +3012,8 @@ onAuthStateChanged(auth, async (user)=>{
     appRoot.style.display='';
     document.getElementById('user-email').textContent = user.email;
     window.currentUserEmail = user.email;
-    // Guarda o e-mail para usar no logEvent após os dados chegarem da nuvem
-    window._pendingLoginLog = user.email;
     await iniciarSincronizacao();
+    if(window.logEvent) window.logEvent('acesso', `Entrou no sistema (login)`, `Usuário: ${user.email}`);
   }else{
     pararSincronizacao();
     loginOverlay.style.display='flex';
