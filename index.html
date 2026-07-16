@@ -289,13 +289,12 @@
     <div class="nav-label" style="margin-top:8px;">Operações</div>
     <div class="nav-item" onclick="openBatchModal('envio')"><span>📦</span> Envio em Lote</div>
     <div class="nav-item" onclick="openBatchModal('retorno')"><span>📥</span> Retorno em Lote</div>
-    <div class="nav-item" onclick="showPage('marcas')" id="nav-marcas"><span>🏷️</span> Marcas e Modelos</div>
     <div class="nav-item" onclick="openRelatorio()"><span>📄</span> Relatório</div>
     <div class="nav-label" style="margin-top:8px;">Sistema</div>
     <div class="nav-item" onclick="showPage('log')" id="nav-log"><span>📜</span> Log do Sistema</div>
   </nav>
   <div class="sidebar-footer">
-    <div id="sync-status" style="margin-bottom:6px;">v5.0 · Frota Rio Verde</div>
+    <div id="sync-status" style="margin-bottom:6px;">v5.1 · Frota Rio Verde</div>
     <div id="user-email" style="color:var(--light);margin-bottom:6px;word-break:break-all;"></div>
     <div onclick="window.doLogout()" style="cursor:pointer;color:var(--red);">🚪 Sair</div>
   </div>
@@ -315,7 +314,8 @@
       </div>
     </div>
     <div class="content">
-      <div class="stats-row" id="dash-stats"></div>
+      <div class="stats-row" id="dash-stats" style="grid-template-columns:repeat(5,1fr);"></div>
+      <div id="dash-custo-card" style="margin-bottom:24px;"></div>
       <div id="dash-alerta-banner" style="display:none;" class="alert-vencido" onclick="showPage('alertas')">
         <div class="alert-vencido-count" id="dash-alerta-count">0</div>
         <div><div class="alert-vencido-text">pneu(s) com retorno atrasado (+7 dias)</div><div class="alert-vencido-sub">Clique para ver e registrar nova previsão de entrega</div></div>
@@ -507,49 +507,6 @@
           <div class="empty-icon">📋</div>
           <div class="empty-title">Nenhuma calibragem registrada ainda</div>
         </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- MARCAS E MODELOS -->
-  <div id="page-marcas" style="display:none;">
-    <div class="topbar">
-      <button class="mobile-menu-btn" onclick="toggleSidebar()">☰</button>
-      <div class="page-title">🏷️ Marcas e Modelos de Pneu</div>
-    </div>
-    <div class="content">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start;">
-
-        <!-- COLUNA ESQUERDA: formulário -->
-        <div>
-          <div class="table-wrap" style="padding:20px;">
-            <div style="font-weight:600;font-size:14px;margin-bottom:16px;" id="marca-form-title">➕ Nova Marca</div>
-            <div class="form-group" style="margin-bottom:12px;">
-              <label>Nome da Marca *</label>
-              <input type="text" id="mf-nome" placeholder="Ex: Bridgestone">
-            </div>
-            <div class="form-group" style="margin-bottom:6px;">
-              <label>Modelos (um por linha) *</label>
-              <textarea id="mf-modelos" rows="5" placeholder="Ex:&#10;R150&#10;S001&#10;Turanza"></textarea>
-            </div>
-            <p style="font-size:11px;color:var(--muted);margin-bottom:14px;">Digite cada modelo em uma linha separada.</p>
-            <div style="display:flex;gap:10px;flex-wrap:wrap;">
-              <button class="btn btn-primary" onclick="saveMarca()">Salvar</button>
-              <button class="btn btn-ghost" onclick="cancelarEdicaoMarca()">Cancelar</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- COLUNA DIREITA: lista de marcas cadastradas -->
-        <div>
-          <div class="table-wrap">
-            <div style="padding:14px 18px;border-bottom:1px solid var(--border);font-weight:600;font-size:13px;">Marcas Cadastradas</div>
-            <div id="marcas-lista" style="padding:14px 18px;">
-              <div class="empty-state"><div class="empty-icon">🏷️</div><div class="empty-title">Nenhuma marca cadastrada</div></div>
-            </div>
-          </div>
-        </div>
-
       </div>
     </div>
   </div>
@@ -1001,8 +958,7 @@
 
 <script>
 // ─── DADOS ────────────────────────────────────────────────────
-// MARCA_MODELO é agora dinâmico — carregado do Firestore via window.startApp/onRemoteUpdate
-let MARCA_MODELO = {
+const MARCA_MODELO = {
   'Good Year':['K Max','Regional RHS'],
   'Michelin':['X Works','X Incity'],
   'Wanli':['Sah01'],
@@ -1087,7 +1043,6 @@ let pneus       = [];
 let veiculos    = [];
 let calibragens = []; // calibragens de pneus dos ônibus (a cada 14 dias)
 let logs        = []; // log de auditoria: absolutamente tudo que acontece no site
-let marcasCatalogo = []; // [{id, nome, modelos:[...]}] — salvo no Firestore
 window.VEICULOS_IMPORT_CSV = VEICULOS_IMPORT_CSV; // exposto para o script de sincronização usar na 1ª carga
 
 let editingPneuId     = null;
@@ -1105,12 +1060,6 @@ const MAX_LOG_REGISTROS       = 3000; // limite de registros mantidos no log (ev
 
 function save(){
   if(window.syncToFirestore) window.syncToFirestore(pneus, veiculos);
-}
-function saveMarcasCatalogo(){
-  // Recalcula o MARCA_MODELO em memória a partir do catálogo
-  MARCA_MODELO = {};
-  marcasCatalogo.forEach(m=>{ MARCA_MODELO[m.nome] = m.modelos||[]; });
-  if(window.syncMarcasToFirestore) window.syncMarcasToFirestore(marcasCatalogo);
 }
 
 // ─── LOG DO SISTEMA ─────────────────────────────────────────────
@@ -1208,7 +1157,7 @@ function statusBadge(p){
 
 // ─── NAVEGAÇÃO ────────────────────────────────────────────────
 function showPage(p){
-  ['dashboard','pneus','veiculos','alertas','fornecedores','calibragem','marcas','log'].forEach(id=>{
+  ['dashboard','pneus','veiculos','alertas','fornecedores','calibragem','log'].forEach(id=>{
     document.getElementById('page-'+id).style.display = id===p?'':'none';
     const nav=document.getElementById('nav-'+id);
     if(nav) nav.classList.toggle('active',id===p);
@@ -1219,7 +1168,6 @@ function showPage(p){
   if(p==='alertas')      renderAlertas();
   if(p==='fornecedores') renderFornecedores();
   if(p==='calibragem')   renderCalibragemPage();
-  if(p==='marcas')       renderMarcasPage();
   if(p==='log')          renderLogPage();
   toggleSidebar(false);
 }
@@ -2028,6 +1976,58 @@ function showVeiculoDetail(id){
 }
 
 // ─── DASHBOARD ────────────────────────────────────────────────
+function renderCustoCard(){
+  const el = document.getElementById('dash-custo-card');
+  if(!el) return;
+
+  // Monta lista de meses/anos disponíveis a partir das reformas
+  const mesesSet = new Set();
+  pneus.forEach(p=>(p.reformas||[]).forEach(r=>{
+    if(r.dataEnvio) mesesSet.add(r.dataEnvio.slice(0,7));
+    if(r.retorno?.data) mesesSet.add(r.retorno.data.slice(0,7));
+  }));
+  const mesesOrdenados = [...mesesSet].sort().reverse();
+
+  // Lê o filtro atual (preserva seleção entre re-renders)
+  const selEl = document.getElementById('dash-custo-mes');
+  const mesSel = selEl ? selEl.value : '';
+
+  // Calcula custo filtrado
+  let custoFiltrado = 0, pneuDestaque = null;
+  pneus.forEach(p=>{
+    let custo = 0;
+    (p.reformas||[]).forEach(r=>{
+      if(!mesSel){
+        custo += custoReforma(r);
+      } else {
+        // considera o mês do envio como referência do custo
+        if((r.dataEnvio||'').slice(0,7) === mesSel) custo += custoReforma(r);
+      }
+    });
+    custoFiltrado += custo;
+    if(custo>0 && (!pneuDestaque||custo>pneuDestaque.custo)) pneuDestaque={fogo:p.fogo,custo};
+  });
+
+  const nomMes=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  function fmtMes(ym){ if(!ym) return ''; const[y,m]=ym.split('-'); return `${nomMes[+m-1]}/${y}`; }
+
+  el.innerHTML=`
+    <div class="stat-card" style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
+      <div style="flex:1;min-width:160px;">
+        <div class="stat-label">💰 Custo em Reformas</div>
+        <div class="stat-value" style="color:#ff8800;font-size:26px;">R$ ${fmtMoeda(custoFiltrado)}</div>
+        <div class="stat-sub">${mesSel?`em ${fmtMes(mesSel)}`:'acumulado total'}${pneuDestaque?` · Maior: Fogo ${pneuDestaque.fogo} (R$ ${fmtMoeda(pneuDestaque.custo)})`:''}${!custoFiltrado?' · nenhum custo registrado':''}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;min-width:160px;">
+        <label style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;">Filtrar por mês</label>
+        <select id="dash-custo-mes" onchange="renderCustoCard()" style="width:160px;padding:7px 10px;font-size:13px;background:var(--dark);border:1px solid var(--border);color:var(--white);border-radius:var(--radius);">
+          <option value="">Todos os meses</option>
+          ${mesesOrdenados.map(m=>`<option value="${m}"${m===mesSel?' selected':''}>${fmtMes(m)}</option>`).join('')}
+        </select>
+      </div>
+    </div>`;
+}
+
 function renderDashboard(){
   const total    = pneus.length;
   const vTot     = veiculos.length;
@@ -2036,21 +2036,14 @@ function renderDashboard(){
   const nRecap   = pneus.reduce((a,p)=>a+contarRecapagens(p),0);
   const nConserto= pneus.reduce((a,p)=>a+(p.reformas||[]).filter(r=>r.retorno?.resultado==='Conserto').length,0);
 
-  let custoTotalFrota=0, pneuMaisCaro=null;
-  pneus.forEach(p=>{
-    const c=custoPorPneu(p);
-    custoTotalFrota+=c;
-    if(c>0 && (!pneuMaisCaro||c>pneuMaisCaro.custo)) pneuMaisCaro={fogo:p.fogo,custo:c};
-  });
-
   document.getElementById('dash-stats').innerHTML=`
     <div class="stat-card"><div class="stat-label">Total de Pneus</div><div class="stat-value" style="color:var(--accent)">🛞 ${total}</div><div class="stat-sub">cadastrados</div></div>
     <div class="stat-card"><div class="stat-label">Ônibus</div><div class="stat-value" style="color:var(--blue)">🚌 ${vTot}</div><div class="stat-sub">na frota</div></div>
     <div class="stat-card"><div class="stat-label">Em Reforma</div><div class="stat-value" style="color:var(--purple)">🔧 ${emRef}</div><div class="stat-sub">aguardando retorno</div></div>
     <div class="stat-card"><div class="stat-label">Total Recapagens</div><div class="stat-value" style="color:var(--green)">🔄 ${nRecap}</div><div class="stat-sub">${nConserto} consertos</div></div>
     <div class="stat-card"><div class="stat-label">Sucata</div><div class="stat-value" style="color:#ff8800">♻️ ${sucatas}</div><div class="stat-sub">pneus baixados</div></div>
-    <div class="stat-card"><div class="stat-label">Custo em Reformas</div><div class="stat-value" style="color:#ff8800;font-size:22px">R$ ${fmtMoeda(custoTotalFrota)}</div><div class="stat-sub">${pneuMaisCaro?`Mais caro: Fogo ${pneuMaisCaro.fogo} (R$ ${fmtMoeda(pneuMaisCaro.custo)})`:'nenhum custo registrado'}</div></div>
   `;
+  renderCustoCard();
 
   const marcaCount={};
   pneus.forEach(p=>{if(p.marca)marcaCount[p.marca]=(marcaCount[p.marca]||0)+1;});
@@ -2506,94 +2499,6 @@ function renderCalibragemPage(){
 }
 
 // ═══════════════════════════════════════════════════════════════
-// ─── CADASTRO DE MARCAS E MODELOS ───────────────────────────────
-// ═══════════════════════════════════════════════════════════════
-let editingMarcaId = null;
-
-function renderMarcasPage(){
-  const lista = document.getElementById('marcas-lista');
-  if(!lista) return;
-  if(!marcasCatalogo.length){
-    lista.innerHTML='<div class="empty-state"><div class="empty-icon">🏷️</div><div class="empty-title">Nenhuma marca cadastrada</div><div style="color:var(--muted);font-size:13px;margin-top:6px;">Use o formulário ao lado para adicionar marcas e modelos.</div></div>';
-    return;
-  }
-  lista.innerHTML = marcasCatalogo.map(m=>`
-    <div style="border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:10px;background:var(--dark);">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-        <span style="font-weight:600;font-size:14px;color:var(--white);">🏷️ ${m.nome}</span>
-        <div class="actions">
-          <button class="btn btn-ghost btn-sm" onclick="editarMarca('${m.id}')">✏️ Editar</button>
-          <button class="btn btn-danger btn-sm" onclick="deletarMarca('${m.id}')">🗑</button>
-        </div>
-      </div>
-      <div style="display:flex;flex-wrap:wrap;gap:6px;">
-        ${(m.modelos||[]).length
-          ? m.modelos.map(mo=>`<span class="badge badge-gray">${mo}</span>`).join('')
-          : '<span style="color:var(--muted);font-size:12px;">Nenhum modelo cadastrado</span>'}
-      </div>
-    </div>`).join('');
-}
-
-function saveMarca(){
-  const nome = document.getElementById('mf-nome').value.trim();
-  if(!nome){ alert('Informe o nome da marca.'); return; }
-  const modelos = document.getElementById('mf-modelos').value
-    .split('\n').map(s=>s.trim()).filter(Boolean);
-  if(!modelos.length){ alert('Informe pelo menos um modelo.'); return; }
-
-  const duplicada = marcasCatalogo.find(m=>m.nome.toLowerCase()===nome.toLowerCase() && m.id!==editingMarcaId);
-  if(duplicada){ alert(`A marca "${nome}" já está cadastrada.`); return; }
-
-  if(editingMarcaId){
-    const i = marcasCatalogo.findIndex(m=>m.id===editingMarcaId);
-    const nomeAntigo = marcasCatalogo[i].nome;
-    marcasCatalogo[i] = {...marcasCatalogo[i], nome, modelos};
-    if(nomeAntigo !== nome){
-      pneus = pneus.map(p=>p.marca===nomeAntigo ? {...p, marca:nome} : p);
-      save();
-    }
-    logEvent('marcas', `Editou a marca ${nome}`, `Modelos: ${modelos.join(', ')}`);
-  } else {
-    marcasCatalogo.push({id:uid(), nome, modelos});
-    logEvent('marcas', `Cadastrou a marca ${nome}`, `Modelos: ${modelos.join(', ')}`);
-  }
-  saveMarcasCatalogo();
-  cancelarEdicaoMarca();
-  renderMarcasPage();
-}
-
-function editarMarca(id){
-  const m = marcasCatalogo.find(x=>x.id===id);
-  if(!m) return;
-  editingMarcaId = id;
-  document.getElementById('marca-form-title').textContent = '✏️ Editar Marca';
-  document.getElementById('mf-nome').value = m.nome;
-  document.getElementById('mf-modelos').value = (m.modelos||[]).join('\n');
-}
-
-function cancelarEdicaoMarca(){
-  editingMarcaId = null;
-  document.getElementById('marca-form-title').textContent = '➕ Nova Marca';
-  document.getElementById('mf-nome').value = '';
-  document.getElementById('mf-modelos').value = '';
-}
-
-function deletarMarca(id){
-  const m = marcasCatalogo.find(x=>x.id===id);
-  if(!m) return;
-  const emUso = pneus.some(p=>p.marca===m.nome);
-  confirmDelete(
-    `Excluir a marca "${m.nome}"?${emUso?' Existem pneus com esta marca — a marca será mantida neles.':''}`,
-    ()=>{
-      marcasCatalogo = marcasCatalogo.filter(x=>x.id!==id);
-      saveMarcasCatalogo();
-      renderMarcasPage();
-      logEvent('marcas', `Excluiu a marca ${m.nome}`, '');
-    }
-  );
-}
-
-// ═══════════════════════════════════════════════════════════════
 // ─── LOG DO SISTEMA ──────────────────────────────────────────────
 // ═══════════════════════════════════════════════════════════════
 function clearLogDateFilter(){
@@ -2618,7 +2523,7 @@ function renderLogPage(){
 
   const tipoBadge = {
     acesso:'badge-blue', pneu:'badge-yellow', veiculo:'badge-purple',
-    reforma:'badge-orange', calibragem:'badge-green', lote:'badge-gray', marcas:'badge-blue',
+    reforma:'badge-orange', calibragem:'badge-green', lote:'badge-gray',
   };
   const tbody = document.getElementById('log-tbody');
   const empty = document.getElementById('log-empty');
@@ -2977,40 +2882,27 @@ function renderTempoMedio(){
 
 // Qual página está visível agora (usado para saber o que re-renderizar quando dados chegam da nuvem)
 function paginaAtual(){
-  const paginas=['dashboard','pneus','veiculos','alertas','fornecedores','calibragem','marcas','log'];
+  const paginas=['dashboard','pneus','veiculos','alertas','fornecedores','calibragem','log'];
   return paginas.find(id=>document.getElementById('page-'+id).style.display!=='none') || 'dashboard';
 }
 
 // Chamado 1x pelo script Firebase, assim que o login é confirmado e os dados iniciais chegam
-function aplicarMarcasRemotas(remoteMarcas){
-  if(!remoteMarcas||!remoteMarcas.length) return;
-  marcasCatalogo = remoteMarcas;
-  MARCA_MODELO = {};
-  marcasCatalogo.forEach(m=>{ MARCA_MODELO[m.nome] = m.modelos||[]; });
-}
-
-window.startApp = function(remotePneus, remoteVeiculos, remoteCalibragens, remoteLogs, remoteMarcas){
+window.startApp = function(remotePneus, remoteVeiculos, remoteCalibragens, remoteLogs){
   pneus = remotePneus;
   veiculos = remoteVeiculos;
   calibragens = remoteCalibragens||[];
   logs = remoteLogs||[];
-  aplicarMarcasRemotas(remoteMarcas||[]);
   showPage('dashboard');
   updateAlertaBadge();
   updateCalibAlertaBadge();
-  if(window._pendingLoginLog){
-    logEvent('acesso', `Entrou no sistema (login)`, `Usuário: ${window._pendingLoginLog}`);
-    window._pendingLoginLog = null;
-  }
 };
 
 // Chamado toda vez que ALGUÉM (você ou outra pessoa) muda algo e a nuvem avisa este navegador
-window.onRemoteUpdate = function(remotePneus, remoteVeiculos, remoteCalibragens, remoteLogs, remoteMarcas){
+window.onRemoteUpdate = function(remotePneus, remoteVeiculos, remoteCalibragens, remoteLogs){
   pneus = remotePneus;
   veiculos = remoteVeiculos;
   if(remoteCalibragens!==undefined) calibragens = remoteCalibragens;
   if(remoteLogs!==undefined) logs = remoteLogs;
-  if(remoteMarcas!==undefined) aplicarMarcasRemotas(remoteMarcas);
   showPage(paginaAtual());
   updateAlertaBadge();
   updateCalibAlertaBadge();
@@ -3046,20 +2938,19 @@ const pneusRef       = doc(db, 'gestaopneus', 'pneus');
 const veiculosRef    = doc(db, 'gestaopneus', 'veiculos');
 const calibragensRef = doc(db, 'gestaopneus', 'calibragens');
 const logsRef        = doc(db, 'gestaopneus', 'logs');
-const marcasRef      = doc(db, 'gestaopneus', 'marcas');
 
 let primeiraCarga = true;
-let recebeuPneus = false, recebeuVeiculos = false, recebeuCalibragens = false, recebeuLogs = false, recebeuMarcas = false;
-let ultimoPneus = [], ultimoVeiculos = [], ultimoCalibragens = [], ultimoLogs = [], ultimoMarcas = [];
+let recebeuPneus = false, recebeuVeiculos = false, recebeuCalibragens = false, recebeuLogs = false;
+let ultimoPneus = [], ultimoVeiculos = [], ultimoCalibragens = [], ultimoLogs = [];
 
 function tentaIniciar(){
-  if(primeiraCarga && recebeuPneus && recebeuVeiculos && recebeuCalibragens && recebeuLogs && recebeuMarcas){
+  if(primeiraCarga && recebeuPneus && recebeuVeiculos && recebeuCalibragens && recebeuLogs){
     primeiraCarga = false;
-    window.startApp(ultimoPneus, ultimoVeiculos, ultimoCalibragens, ultimoLogs, ultimoMarcas);
+    window.startApp(ultimoPneus, ultimoVeiculos, ultimoCalibragens, ultimoLogs);
   }
 }
 
-let unsubPneus = null, unsubVeiculos = null, unsubCalibragens = null, unsubLogs = null, unsubMarcas = null;
+let unsubPneus = null, unsubVeiculos = null, unsubCalibragens = null, unsubLogs = null;
 
 async function iniciarSincronizacao(){
   // Semeia a lista de veículos a partir da planilha embutida, apenas se ainda não existir nada na nuvem
@@ -3069,46 +2960,41 @@ async function iniciarSincronizacao(){
     await setDoc(veiculosRef, {list:seed});
   }
   const pSnap = await getDoc(pneusRef);
-  if(!pSnap.exists()) await setDoc(pneusRef, {list:[]});
-
+  if(!pSnap.exists()){
+    await setDoc(pneusRef, {list:[]});
+  }
   const cSnap = await getDoc(calibragensRef);
-  if(!cSnap.exists()) await setDoc(calibragensRef, {list:[]});
-
+  if(!cSnap.exists()){
+    await setDoc(calibragensRef, {list:[]});
+  }
   const lSnap = await getDoc(logsRef);
-  if(!lSnap.exists()) await setDoc(logsRef, {list:[]});
-
-  const mSnap = await getDoc(marcasRef);
-  if(!mSnap.exists()) await setDoc(marcasRef, {list:[]});
+  if(!lSnap.exists()){
+    await setDoc(logsRef, {list:[]});
+  }
 
   unsubPneus = onSnapshot(pneusRef, snap=>{
     ultimoPneus = snap.exists() ? (snap.data().list||[]) : [];
     recebeuPneus = true;
     if(primeiraCarga) tentaIniciar();
-    else window.onRemoteUpdate(ultimoPneus, ultimoVeiculos, ultimoCalibragens, ultimoLogs, ultimoMarcas);
+    else window.onRemoteUpdate(ultimoPneus, ultimoVeiculos, ultimoCalibragens, ultimoLogs);
   });
   unsubVeiculos = onSnapshot(veiculosRef, snap=>{
     ultimoVeiculos = snap.exists() ? (snap.data().list||[]) : [];
     recebeuVeiculos = true;
     if(primeiraCarga) tentaIniciar();
-    else window.onRemoteUpdate(ultimoPneus, ultimoVeiculos, ultimoCalibragens, ultimoLogs, ultimoMarcas);
+    else window.onRemoteUpdate(ultimoPneus, ultimoVeiculos, ultimoCalibragens, ultimoLogs);
   });
   unsubCalibragens = onSnapshot(calibragensRef, snap=>{
     ultimoCalibragens = snap.exists() ? (snap.data().list||[]) : [];
     recebeuCalibragens = true;
     if(primeiraCarga) tentaIniciar();
-    else window.onRemoteUpdate(ultimoPneus, ultimoVeiculos, ultimoCalibragens, ultimoLogs, ultimoMarcas);
+    else window.onRemoteUpdate(ultimoPneus, ultimoVeiculos, ultimoCalibragens, ultimoLogs);
   });
   unsubLogs = onSnapshot(logsRef, snap=>{
     ultimoLogs = snap.exists() ? (snap.data().list||[]) : [];
     recebeuLogs = true;
     if(primeiraCarga) tentaIniciar();
-    else window.onRemoteUpdate(ultimoPneus, ultimoVeiculos, ultimoCalibragens, ultimoLogs, ultimoMarcas);
-  });
-  unsubMarcas = onSnapshot(marcasRef, snap=>{
-    ultimoMarcas = snap.exists() ? (snap.data().list||[]) : [];
-    recebeuMarcas = true;
-    if(primeiraCarga) tentaIniciar();
-    else window.onRemoteUpdate(ultimoPneus, ultimoVeiculos, ultimoCalibragens, ultimoLogs, ultimoMarcas);
+    else window.onRemoteUpdate(ultimoPneus, ultimoVeiculos, ultimoCalibragens, ultimoLogs);
   });
 }
 
@@ -3117,10 +3003,9 @@ function pararSincronizacao(){
   if(unsubVeiculos) unsubVeiculos();
   if(unsubCalibragens) unsubCalibragens();
   if(unsubLogs) unsubLogs();
-  if(unsubMarcas) unsubMarcas();
-  unsubPneus = unsubVeiculos = unsubCalibragens = unsubLogs = unsubMarcas = null;
+  unsubPneus = unsubVeiculos = unsubCalibragens = unsubLogs = null;
   primeiraCarga = true;
-  recebeuPneus = recebeuVeiculos = recebeuCalibragens = recebeuLogs = recebeuMarcas = false;
+  recebeuPneus = recebeuVeiculos = recebeuCalibragens = recebeuLogs = false;
 }
 
 // Chamado pelo app (função save()) sempre que algo é criado/editado/excluído (pneus/veículos)
@@ -3131,10 +3016,6 @@ window.syncToFirestore = function(pneusAtuais, veiculosAtuais){
 // Chamado sempre que uma calibragem é adicionada/excluída
 window.syncCalibragensToFirestore = function(calibragensAtuais){
   setDoc(calibragensRef, {list:calibragensAtuais}).catch(e=>console.error('Erro ao salvar calibragens:', e));
-};
-// Chamado toda vez que uma marca/modelo é criada/editada/excluída
-window.syncMarcasToFirestore = function(marcasAtuais){
-  setDoc(marcasRef, {list:marcasAtuais}).catch(e=>console.error('Erro ao salvar marcas:', e));
 };
 // Chamado toda vez que um evento é registrado no log (absolutamente tudo que acontece no site)
 window.syncLogsToFirestore = function(logsAtuais){
